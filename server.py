@@ -317,7 +317,15 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_header('Content-Type', 'text/event-stream')
                 self.send_header('Cache-Control', 'no-cache')
                 self.send_header('Connection', 'keep-alive')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Access-Control-Allow-Headers', 'Cache-Control, Content-Type')
+                self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
                 self.end_headers()
+                # 发送初始数据让浏览器确认连接成功
+                init_data = json.dumps({"status": "connected", "ts": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}).encode('utf-8')
+                self.wfile.write(b"event: open\n" + b"data: " + init_data + b"\n\n")
+                self.wfile.flush()
+                print(f"[DEBUG] SSE客户端连接: {self.client_address}")  # 调试信息
                 with clients_lock:
                     clients.add(self)
                 threading.Thread(target=heartbeat_loop, daemon=True).start()
@@ -329,11 +337,21 @@ class Handler(SimpleHTTPRequestHandler):
                     with clients_lock:
                         try:
                             clients.remove(self)
+                            print(f"[DEBUG] SSE客户端断开: {self.client_address}")  # 调试信息
                         except:
                             pass
                 return
             return error_response(self, 404, 'NOT_FOUND', 'unknown path')
         return super().do_GET()
+
+    def do_OPTIONS(self):
+        # 处理CORS预检请求
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Cache-Control')
+        self.send_header('Access-Control-Max-Age', '86400')
+        self.end_headers()
 
     def do_PUT(self):
         parsed = urlparse(self.path)

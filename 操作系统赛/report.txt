@@ -1,6 +1,6 @@
 ============================================================
 操作系统异常检测报告
-生成时间: 2025-11-24 16:21:08
+生成时间: 2025-11-24 16:54:58
 扫描文件数: 1
 检测到异常: 22 个
 ============================================================
@@ -9,27 +9,27 @@
 【OOM 异常】共 5 个:
 --------------------------------------------------
 1. 严重性: HIGH
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:1
    内容: Out of memory: Killed process 1234 (python)
 
 2. 严重性: HIGH
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:4
    内容: Memory cgroup out of memory
 
 3. 严重性: HIGH
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:7
    内容: 2025-11-18T10:00:00.000000+08:00 hostname kernel: Out of memory: Killed process 1234 (python)
 
 4. 严重性: HIGH
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:8
    内容: 2025-11-18T10:01:00.000000+08:00 hostname kernel: oom-killer invoked by init process
 
 5. 严重性: HIGH
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:9
    内容: 2025-11-18T10:02:00.000000+08:00 hostname kernel: Memory cgroup out of memory: Killed process 5678 (java)
 
@@ -37,17 +37,17 @@
 【PANIC 异常】共 3 个:
 --------------------------------------------------
 1. 严重性: CRITICAL
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:2
    内容: Kernel panic - not syncing: System halted
 
 2. 严重性: CRITICAL
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:11
    内容: 2025-11-18T10:03:00.000000+08:00 hostname kernel: Kernel panic - not syncing: System halted
 
 3. 严重性: CRITICAL
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:12
    内容: 2025-11-18T10:04:00.000000+08:00 hostname kernel: kernel panic detected: VFS: Unable to mount root fs
 
@@ -55,12 +55,12 @@
 【REBOOT 异常】共 2 个:
 --------------------------------------------------
 1. 严重性: MEDIUM
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:14
    内容: 2025-11-18T10:05:00.000000+08:00 hostname systemd: system unexpectedly shut down due to power failure
 
 2. 严重性: MEDIUM
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:15
    内容: 2025-11-18T10:06:00.000000+08:00 hostname kernel: unexpected restart triggered by hardware error
 
@@ -68,22 +68,22 @@
 【OOPS 异常】共 4 个:
 --------------------------------------------------
 1. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:17
    内容: 2025-11-18T10:07:00.000000+08:00 hostname kernel: Oops: general protection fault at 0000000000000000
 
 2. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:18
    内容: 2025-11-18T10:08:00.000000+08:00 hostname kernel: BUG: unable to handle kernel paging request at ffff880035a00000
 
 3. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:19
    内容: 2025-11-18T10:09:00.000000+08:00 hostname kernel: WARNING: CPU: 1 PID: 1234 at drivers/net/ethernet/intel/e1000e/netdev.c:1234
 
 4. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:20
    内容: 2025-11-18T10:10:00.000000+08:00 hostname kernel: kernel BUG at mm/slub.c:395!
 
@@ -91,22 +91,22 @@
 【DEADLOCK 异常】共 4 个:
 --------------------------------------------------
 1. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:22
    内容: 2025-11-18T10:11:00.000000+08:00 hostname kernel: INFO: task java:9012 blocked for more than 120 seconds.
 
 2. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:23
    内容: 2025-11-18T10:12:00.000000+08:00 hostname kernel: possible deadlock in __lock_page
 
 3. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:24
    内容: 2025-11-18T10:13:00.000000+08:00 hostname kernel: soft lockup detected in task python3
 
 4. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:25
    内容: 2025-11-18T10:14:00.000000+08:00 hostname kernel: hung task: blocked for 300 seconds on device sda1
 
@@ -114,22 +114,22 @@
 【FS_ERROR 异常】共 4 个:
 --------------------------------------------------
 1. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:27
    内容: 2025-11-18T10:15:00.000000+08:00 hostname kernel: EXT4-fs error (device sda2): ext4_find_entry:1435: inode #12345: comm ls: reading directory lblock 0
 
 2. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:28
    内容: 2025-11-18T10:16:00.000000+08:00 hostname kernel: XFS error (device sdb1): Metadata corruption detected at xfs_agi_read_verify+0x123/0x456
 
 3. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:29
    内容: 2025-11-18T10:17:00.000000+08:00 hostname kernel: Buffer I/O error on device sdc3, logical block 123456
 
 4. 严重性: MAJOR
-   时间: 2025-11-24 16:21:08
+   时间: 2025-11-24 16:54:58
    来源: D:\LinuxOs\Clone-git\kango-\操作系统赛\test.log:30
    内容: 2025-11-18T10:18:00.000000+08:00 hostname kernel: filesystem error: superblock corrupt, run fsck
 
