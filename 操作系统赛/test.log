@@ -1,0 +1,34 @@
+Out of memory: Killed process 1234 (python)
+Kernel panic - not syncing: System halted
+
+Memory cgroup out of memory
+
+
+2025-11-18T10:00:00.000000+08:00 hostname kernel: Out of memory: Killed process 1234 (python)
+2025-11-18T10:01:00.000000+08:00 hostname kernel: oom-killer invoked by init process
+2025-11-18T10:02:00.000000+08:00 hostname kernel: Memory cgroup out of memory: Killed process 5678 (java)
+
+2025-11-18T10:03:00.000000+08:00 hostname kernel: Kernel panic - not syncing: System halted
+2025-11-18T10:04:00.000000+08:00 hostname kernel: kernel panic detected: VFS: Unable to mount root fs
+
+2025-11-18T10:05:00.000000+08:00 hostname systemd: system unexpectedly shut down due to power failure
+2025-11-18T10:06:00.000000+08:00 hostname kernel: unexpected restart triggered by hardware error
+
+2025-11-18T10:07:00.000000+08:00 hostname kernel: Oops: general protection fault at 0000000000000000
+2025-11-18T10:08:00.000000+08:00 hostname kernel: BUG: unable to handle kernel paging request at ffff880035a00000
+2025-11-18T10:09:00.000000+08:00 hostname kernel: WARNING: CPU: 1 PID: 1234 at drivers/net/ethernet/intel/e1000e/netdev.c:1234
+2025-11-18T10:10:00.000000+08:00 hostname kernel: kernel BUG at mm/slub.c:395!
+
+2025-11-18T10:11:00.000000+08:00 hostname kernel: INFO: task java:9012 blocked for more than 120 seconds.
+2025-11-18T10:12:00.000000+08:00 hostname kernel: possible deadlock in __lock_page
+2025-11-18T10:13:00.000000+08:00 hostname kernel: soft lockup detected in task python3
+2025-11-18T10:14:00.000000+08:00 hostname kernel: hung task: blocked for 300 seconds on device sda1
+
+2025-11-18T10:15:00.000000+08:00 hostname kernel: EXT4-fs error (device sda2): ext4_find_entry:1435: inode #12345: comm ls: reading directory lblock 0
+2025-11-18T10:16:00.000000+08:00 hostname kernel: XFS error (device sdb1): Metadata corruption detected at xfs_agi_read_verify+0x123/0x456
+2025-11-18T10:17:00.000000+08:00 hostname kernel: Buffer I/O error on device sdc3, logical block 123456
+2025-11-18T10:18:00.000000+08:00 hostname kernel: filesystem error: superblock corrupt, run fsck
+
+2025-11-18T10:19:00.000000+08:00 hostname kernel: Normal system operation message
+2025-11-18T10:20:00.000000+08:00 hostname systemd: Started User Manager for UID 1000.
+2025-11-18T10:21:00.000000+08:00 hostname NetworkManager: <info>  [123456.789] device (eth0): state change: ip-config -> ip-check (reason 'none') [70 80 0]

@@ -1,0 +1,64 @@
+log_paths:
+  - "/var/log"
+  - "./test.log"
+
+detectors:
+  oom:
+    enabled: true
+    keywords:
+      - "Out of memory"
+      - "oom-killer"
+      - "Killed process"
+      - "Memory cgroup out of memory"
+    
+  panic:
+    enabled: true
+    keywords:
+      - "Kernel panic"
+      - "kernel panic"
+      - "not syncing"
+      - "System halted"
+      
+  reboot:
+    enabled: true
+    keywords:
+      - "unexpectedly shut down"
+      - "unexpected restart"
+      - "system reboot"
+  
+  # 新增检测器配置
+  oops:
+    enabled: true
+    keywords:
+      - "Oops:"
+      - "general protection fault"
+      - "kernel BUG at"
+      - "Unable to handle kernel"
+      - "WARNING: CPU:"
+      - "BUG: unable to handle kernel"
+      - "invalid opcode:"
+      - "stack segment:"
+      
+  deadlock:
+    enabled: true
+    keywords:
+      - "possible deadlock"
+      - "lock held"
+      - "blocked for"
+      - "stalled for"
+      - "hung task"
+      - "task blocked"
+      - "soft lockup"
+      - "hard lockup"
+      
+  fs_exception:
+    enabled: true
+    keywords:
+      - "filesystem error"
+      - "EXT4-fs error"
+      - "XFS error"
+      - "I/O error"
+      - "file system corruption"
+      - "superblock corrupt"
+      - "metadata corruption"
+      - "fsck needed"

@@ -1,0 +1,1 @@
+{"schema_version": "1.0", "date": "2025-11-24", "total_anomalies": 46, "by_severity": {"critical": 7, "major": 11, "minor": 28}, "by_type": {"oom": 11, "panic": 7, "reboot": 4, "oops": 8, "deadlock": 8, "fs_error": 8}, "hosts": [], "trend": [], "last_detection": "2025-11-24T08:54:58Z"}
