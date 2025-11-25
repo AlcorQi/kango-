@@ -125,6 +125,15 @@ def compute_stats(window=None):
         "trend": [],
         "last_detection": last_detection
     }
+class AIProvider:
+    def suggestions(self, window, types, host_id, limit):
+        return {
+            "items": [],
+            "generated_at": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+            "cache_ttl_sec": 600
+        }
+
+ai_provider = AIProvider()
 
 def parse_iso(s):
     try:
@@ -341,6 +350,17 @@ class Handler(SimpleHTTPRequestHandler):
                         except:
                             pass
                 return
+            if p == '/api/v1/ai/suggestions':
+                qs = parse_qs(parsed.query)
+                window = qs.get('window', ['PT24H'])[0]
+                types = qs.get('types', [None])[0]
+                host_id = qs.get('host_id', [None])[0]
+                try:
+                    limit = int(qs.get('limit', ['10'])[0])
+                except:
+                    limit = 10
+                res = ai_provider.suggestions(window, types, host_id, limit)
+                return json_response(self, res)
             return error_response(self, 404, 'NOT_FOUND', 'unknown path')
         return super().do_GET()
 
