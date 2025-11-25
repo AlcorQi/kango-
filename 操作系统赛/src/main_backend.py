@@ -46,6 +46,14 @@ class ExceptionMonitor:
             print("📖 正在读取: systemd journalctl")
             total_detections += self.journal_scanner.scan_journal()
         
+        # 检测系统级别问题（死锁、panic状态等）
+        print("🔍 正在检测系统状态问题...")
+        system_issues = self.detector_manager.detect_system_issues()
+        for issue in system_issues:
+            self.result_manager.add_result(issue)
+        total_detections += len(system_issues)
+        print(f"   检测到 {len(system_issues)} 个系统状态问题")
+        
         # 输出扫描统计
         elapsed_time = self.result_manager.get_elapsed_time()
         print(f"\n📊 扫描完成!")
@@ -101,12 +109,16 @@ def parse_args():
                        default='./操作系统赛/report.txt',
                        help='指定输出报告文件路径')
     
+    parser.add_argument('--sysrq-check', action='store_true',
+                       help='启用SysRq死锁检测（需要root权限）')
+    
     return parser.parse_args()
 
 def main():
     """主程序入口"""
     print("=" * 60)
-    print("🖥️  操作系统异常信息检测工具 v1.0")
+    print("🖥️  操作系统异常信息检测工具 v1.1")
+    print("增强特性: 系统状态检测(SysRq死锁、崩溃转储分析)")
     print("=" * 60)
     
     # 解析命令行参数
@@ -120,6 +132,8 @@ def main():
     monitor.save_report(args.output)
     
     print("\n🎉 程序执行完成!")
+    if args.sysrq_check:
+        print("💡 提示: 使用 --sysrq-check 参数需要root权限以获得更精确的死锁检测")
 
 if __name__ == "__main__":
     main()

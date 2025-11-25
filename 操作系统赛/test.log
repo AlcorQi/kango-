@@ -32,3 +32,128 @@ Memory cgroup out of memory
 2025-11-18T10:19:00.000000+08:00 hostname kernel: Normal system operation message
 2025-11-18T10:20:00.000000+08:00 hostname systemd: Started User Manager for UID 1000.
 2025-11-18T10:21:00.000000+08:00 hostname NetworkManager: <info>  [123456.789] device (eth0): state change: ip-config -> ip-check (reason 'none') [70 80 0]
+
+
+
+[   28.050609] [    T305] ------------[ cut here ]------------
+[   28.050615] [    T305] WARNING: CPU: 1 PID: 305 at drivers/gpu/drm/vmwgfx/vmwgfx_bo.c:78 vmw_bo_free+0x41/0x60 [vmwgfx]
+[   28.050650] [    T305] Modules linked in: isofs snd_seq_dummy snd_hrtimer intel_rapl_msr intel_rapl_common snd_ens1371 snd_ac97_codec intel_uncore_frequency_common gameport intel_pmc_core pmt_telemetry pmt_class ac97_bus intel_vsec polyval_clmulni polyval_generic ghash_clmulni_intel sha256_ssse3 sha1_ssse3 aesni_intel snd_pcm crypto_simd cryptd rapl snd_seq_midi snd_seq_midi_event vmw_balloon snd_rawmidi qrtr snd_seq snd_seq_device snd_timer snd soundcore i2c_piix4 i2c_smbus joydev input_leds mac_hid vsock_loopback vmw_vsock_virtio_transport_common binfmt_misc serio_raw vmw_vsock_vmci_transport vsock vmw_vmci sch_fq_codel vmwgfx drm_ttm_helper ttm msr parport_pc ppdev lp parport efi_pstore nfnetlink dmi_sysfs ip_tables x_tables autofs4 ahci libahci hid_generic e1000 usbhid hid vga16fb nd_pmem psmouse nd_btt dax_pmem vgastate mptspi mptscsih mptbase pata_acpi scsi_transport_spi floppy
+[   28.050718] [    T305] CPU: 1 UID: 0 PID: 305 Comm: plymouthd Kdump: loaded Not tainted 6.14.0-36-generic #36~24.04.1-Ubuntu
+[   28.050722] [    T305] Hardware name: VMware, Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 11/12/2020
+[   28.050724] [    T305] RIP: 0010:vmw_bo_free+0x41/0x60 [vmwgfx]
+[   28.050745] [    T305] Code: 75 28 48 89 df e8 df fd ff ff 48 83 bb 88 02 00 00 00 75 1a 48 89 df e8 ad ce 98 df 48 8b 5d f8 c9 31 c0 31 ff e9 3f a8 74 e0 <0f> 0b eb d4 0f 0b 48 89 df e8 91 ce 98 df 48 8b 5d f8 c9 31 c0 31
+[   28.050747] [    T305] RSP: 0018:ffffce88c09d3ae0 EFLAGS: 00010286
+[   28.050750] [    T305] RAX: ffff8c28825ab0c0 RBX: ffff8c28815d1c00 RCX: 0000000000000000
+[   28.050751] [    T305] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff8c28815d1c00
+[   28.050753] [    T305] RBP: ffffce88c09d3ae8 R08: 0000000000000000 R09: 0000000000000000
+[   28.050754] [    T305] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
+[   28.050755] [    T305] R13: ffff8c28861e0618 R14: ffff8c28815d1c00 R15: ffff8c28815d1d00
+[   28.050757] [    T305] FS:  0000000000000000(0000) GS:ffff8c28b7e80000(0000) knlGS:0000000000000000
+[   28.050759] [    T305] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   28.050761] [    T305] CR2: 000074542f4053e8 CR3: 0000000061240001 CR4: 0000000000370ef0
+[   28.050765] [    T305] Call Trace:
+[   28.050767] [    T305]  <TASK>
+[   28.050770] [    T305]  ttm_bo_release+0x6e/0x2e0 [ttm]
+[   28.050780] [    T305]  ? drm_vma_node_revoke+0x73/0x90
+[   28.050785] [    T305]  ? kfree+0x2c6/0x360
+[   28.050790] [    T305]  ttm_bo_put+0x3c/0x70 [ttm]
+[   28.050797] [    T305]  vmw_gem_object_free+0x13/0x30 [vmwgfx]
+[   28.050820] [    T305]  drm_gem_object_handle_put_unlocked+0x120/0x130
+[   28.050824] [    T305]  drm_gem_object_release_handle+0x5b/0xc0
+[   28.050826] [    T305]  ? __pfx_drm_gem_object_release_handle+0x10/0x10
+[   28.050829] [    T305]  idr_for_each+0x6e/0xf0
+[   28.050834] [    T305]  drm_gem_release+0x20/0x40
+[   28.050836] [    T305]  drm_file_free+0x1c5/0x270
+[   28.050840] [    T305]  drm_release+0xb1/0x130
+[   28.050842] [    T305]  __fput+0xed/0x2d0
+[   28.050845] [    T305]  ____fput+0x15/0x20
+[   28.050847] [    T305]  task_work_run+0x60/0xa0
+[   28.050852] [    T305]  do_exit+0x274/0x4e0
+[   28.050855] [    T305]  ? wake_up_state+0x10/0x20
+[   28.050860] [    T305]  do_group_exit+0x34/0x90
+[   28.050863] [    T305]  __x64_sys_exit_group+0x18/0x20
+[   28.050866] [    T305]  x64_sys_call+0x1666/0x2650
+[   28.050870] [    T305]  do_syscall_64+0x7e/0x170
+[   28.050874] [    T305]  ? __count_memcg_events+0xd3/0x1a0
+[   28.050879] [    T305]  ? count_memcg_events.constprop.0+0x2a/0x50
+[   28.050882] [    T305]  ? handle_mm_fault+0x22e/0x360
+[   28.050885] [    T305]  ? do_user_addr_fault+0x5d5/0x870
+[   28.050889] [    T305]  ? arch_exit_to_user_mode_prepare.isra.0+0x22/0x120
+[   28.050892] [    T305]  ? irqentry_exit_to_user_mode+0x2d/0x1d0
+[   28.050895] [    T305]  ? irqentry_exit+0x43/0x50
+[   28.050897] [    T305]  ? clear_bhb_loop+0x30/0x80
+[   28.050899] [    T305]  ? clear_bhb_loop+0x30/0x80
+[   28.050901] [    T305]  ? clear_bhb_loop+0x30/0x80
+[   28.050903] [    T305]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+[   28.050907] [    T305] RIP: 0033:0x77f71005021d
+[   28.050910] [    T305] Code: Unable to access opcode bytes at 0x77f7100501f3.
+[   28.050912] [    T305] RSP: 002b:00007fffb341d0a8 EFLAGS: 00000206 ORIG_RAX: 00000000000000e7
+[   28.050914] [    T305] RAX: ffffffffffffffda RBX: 000077f710166fa8 RCX: 000077f71005021d
+[   28.050916] [    T305] RDX: 00000000000000e7 RSI: ffffffffffffff88 RDI: 0000000000000000
+[   28.050917] [    T305] RBP: 00007fffb341d100 R08: 00007fffb341d048 R09: 0000000000000007
+[   28.050918] [    T305] R10: 000056243505f990 R11: 0000000000000206 R12: 0000000000000004
+[   28.050919] [    T305] R13: 0000000000000000 R14: 0000000000000000 R15: 000077f710166fc0
+[   28.050924] [    T305]  </TASK>
+[   28.050925] [    T305] ---[ end trace 0000000000000000 ]---
+[   77.518376] [     T34] audit: type=1400 audit(1763967600.706:158): apparmor="DENIED" operation="open" class="file" profile="snap.firmware-updater.firmware-notifier" name="/proc/sys/vm/max_map_count" pid=2703 comm="firmware-notifi" requested_mask="r" denied_mask="r" fsuid=1000 ouid=0
+[  113.038903] [   T2845] sysrq: Trigger a crash
+[  113.038909] [   T2845] Kernel panic - not syncing: sysrq triggered crash
+[  113.038911] [   T2845] CPU: 1 UID: 0 PID: 2845 Comm: tee Kdump: loaded Tainted: G        W          6.14.0-36-generic #36~24.04.1-Ubuntu
+[  113.038914] [   T2845] Tainted: [W]=WARN
+[  113.038914] [   T2845] Hardware name: VMware, Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 11/12/2020
+[  113.038916] [   T2845] Call Trace:
+[  113.038917] [   T2845]  <TASK>
+[  113.038920] [   T2845]  dump_stack_lvl+0x27/0xa0
+[  113.038924] [   T2845]  dump_stack+0x10/0x20
+[  113.038925] [   T2845]  panic+0x36f/0x400
+[  113.038928] [   T2845]  sysrq_handle_crash+0x1a/0x20
+[  113.038932] [   T2845]  __handle_sysrq+0xe2/0x260
+[  113.038933] [   T2845]  write_sysrq_trigger+0x62/0x90
+[  113.038934] [   T2845]  proc_reg_write+0x66/0xa0
+[  113.038936] [   T2845]  vfs_write+0x107/0x470
+[  113.038939] [   T2845]  ? finish_task_switch.isra.0+0x9c/0x310
+[  113.038942] [   T2845]  ? rseq_get_rseq_cs+0x22/0x260
+[  113.038944] [   T2845]  ? rseq_ip_fixup+0x8f/0x1f0
+[  113.038945] [   T2845]  ksys_write+0x72/0xf0
+[  113.038947] [   T2845]  __x64_sys_write+0x19/0x30
+[  113.038949] [   T2845]  x64_sys_call+0x2c4/0x2650
+[  113.038951] [   T2845]  do_syscall_64+0x7e/0x170
+[  113.038954] [   T2845]  ? do_syscall_64+0x8a/0x170
+[  113.038955] [   T2845]  ? __count_memcg_events+0xd3/0x1a0
+[  113.038958] [   T2845]  ? count_memcg_events.constprop.0+0x2a/0x50
+[  113.038960] [   T2845]  ? handle_mm_fault+0x22e/0x360
+[  113.038961] [   T2845]  ? do_user_addr_fault+0x5d5/0x870
+[  113.038964] [   T2845]  ? arch_exit_to_user_mode_prepare.isra.0+0x22/0x120
+[  113.038966] [   T2845]  ? irqentry_exit_to_user_mode+0x2d/0x1d0
+[  113.038968] [   T2845]  ? irqentry_exit+0x43/0x50
+[  113.038969] [   T2845]  ? clear_bhb_loop+0x30/0x80
+[  113.038970] [   T2845]  ? clear_bhb_loop+0x30/0x80
+[  113.038971] [   T2845]  ? clear_bhb_loop+0x30/0x80
+[  113.038972] [   T2845]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+[  113.038974] [   T2845] RIP: 0033:0x78859271c5a4
+[  113.038976] [   T2845] Code: c7 00 16 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 f3 0f 1e fa 80 3d a5 ea 0e 00 00 74 13 b8 01 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 54 c3 0f 1f 00 55 48 89 e5 48 83 ec 20 48 89
+[  113.038977] [   T2845] RSP: 002b:00007ffe59f8f9b8 EFLAGS: 00000202 ORIG_RAX: 0000000000000001
+[  113.038979] [   T2845] RAX: ffffffffffffffda RBX: 0000000000000002 RCX: 000078859271c5a4
+[  113.038980] [   T2845] RDX: 0000000000000002 RSI: 00007ffe59f8fb10 RDI: 0000000000000003
+[  113.038981] [   T2845] RBP: 00007ffe59f8f9e0 R08: 0000000000000002 R09: 0000000000000001
+[  113.038981] [   T2845] R10: 00000000000001b6 R11: 0000000000000202 R12: 0000000000000002
+[  113.038982] [   T2845] R13: 00007ffe59f8fb10 R14: 0000628e8551d480 R15: 0000000000000002
+[  113.038984] [   T2845]  </TASK>
+
+
+[20000.123456] sysrq: Show Blocked State
+[20000.123457]   task                PC stack   pid father
+[20000.123458] deadlock_t1     D    0  2866      2 0x00000000
+[20000.123459] deadlock_t2     D    0  2867      2 0x00000000
+
+[20000.123460] Call Trace for deadlock_t1:
+[20000.123461]  __schedule+0x2a0/0x8b0
+[20000.123462]  schedule+0x43/0xb0
+[20000.123463]  mutex_lock+0x6a/0x70
+[20000.123464]  thread1_func+0x85/0xa0 [real_deadlock]
+
+[20000.123465] Call Trace for deadlock_t2:
+[20000.123466]  __schedule+0x2a0/0x8b0
+[20000.123467]  schedule+0x43/0xb0
+[20000.123468]  mutex_lock+0x6a/0x70
+[20000.123469]  thread2_func+0x85/0xa0 [real_deadlock]
