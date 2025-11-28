@@ -10,7 +10,7 @@ class ConfigManager:
     def get_default_config(self):
         """获取默认配置"""
         return {
-            'detection_mode': 'mixed',  # 全局检测模式: keyword, regex, mixed
+            'detection_mode': 'mixed',
             'log_paths': [
                 '/var/log',
                 './backend/log/test.log'
@@ -18,7 +18,7 @@ class ConfigManager:
             'detectors': {
                 'oom': {
                     'enabled': True,
-                    'detection_mode': 'mixed',  # 可单独覆盖全局模式
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'Out of memory',
                         'oom-killer',
@@ -26,10 +26,15 @@ class ConfigManager:
                         'Memory cgroup out of memory'
                     ],
                     'regex_patterns': [
-                        r'Out\s+of\s+memory',
-                        r'oom[\-\s]*killer',
-                        r'Killed\s+process\s+\d+',
-                        r'Memory\s+cgroup\s+out\s+of\s+memory'
+                        # 匹配各种OOM模式，包括被分隔的关键词和内存模式
+                        r'(?:Out\s+of\s+memory|OOM).*?(?:kill|terminat).*?process.*?\d+',
+                        r'oom.*?killer.*?invoked.*?(?:gfp_mask|order)=\w+',
+                        r'(?:Killed|terminated).*?process.*?\d+.*?(?:total-vm|rss).*?\d+[kKmMgG]?B',
+                        r'Memory.*?cgroup.*?out.*?memory.*?(?:usage|limit).*?\d+',
+                        r'oom_score.*?\d+.*?pid.*?\d+.*?total_vm.*?\d+',
+                        r'page allocation failure.*?order.*?\d+',
+                        r'compact.*?failed.*?order.*?\d+',
+                        r'swap.*?full.*?cannot.*?swap.*?out'
                     ]
                 },
                 'panic': {
@@ -44,11 +49,15 @@ class ConfigManager:
                         'Unable to mount root'
                     ],
                     'regex_patterns': [
-                        r'Kernel\s+panic',
-                        r'not\s+syncing',
-                        r'System\s+halted',
-                        r'sysrq\s+triggered\s+crash',
-                        r'Unable\s+to\s+mount\s+root'
+                        # 匹配内核恐慌的各种模式，包括被分隔的短语
+                        r'(?:Kernel|kernel).*?panic.*?(?:not.*?syncing|System.*?halted)',
+                        r'panic.*?(?:CPU|PID).*?\d+.*?(?:not.*?syncing|System.*?halted)',
+                        r'(?:sysrq|SysRq).*?trigger.*?crash.*?Kernel.*?panic',
+                        r'(?:Unable to mount|Cannot mount).*?root.*?(?:filesystem|device)',
+                        r'(?:VFS|Virtual File System).*?mount.*?root.*?failed',
+                        r'end.*?Kernel.*?panic.*?(?:not.*?tty|sysrq)',
+                        r'BUG.*?unable.*?handle.*?(?:kernel|NULL).*?at.*?0x[\da-fA-F]+',
+                        r'general protection fault.*?ip:.*?[\da-fA-F]+.*?error:.*?\d+'
                     ]
                 },
                 'reboot': {
@@ -61,10 +70,15 @@ class ConfigManager:
                         'restart triggered by hardware'
                     ],
                     'regex_patterns': [
-                        r'unexpectedly\s+shut\s+down',
-                        r'unexpected\s+restart',
-                        r'system\s+reboot',
-                        r'restart\s+triggered\s+by\s+hardware'
+                        # 匹配重启相关的模式，包括各种表达方式
+                        r'(?:unexpected|unclean).*?(?:shut.*?down|restart|reboot)',
+                        r'system.*?(?:reboot|restart).*?(?:initiated|triggered)',
+                        r'(?:watchdog|hardware).*?trigger.*?(?:reboot|restart)',
+                        r'power.*?(?:failure|loss).*?shut.*?down',
+                        r'ACPI.*?enter.*?(?:S5|shutdown|reboot)',
+                        r'systemd.*?reboot.*?target.*?start',
+                        r'kernel.*?restart.*?preparing',
+                        r'emergency.*?restart.*?initiated'
                     ]
                 },
                 'oops': {
@@ -81,14 +95,17 @@ class ConfigManager:
                         'stack segment:'
                     ],
                     'regex_patterns': [
-                        r'Oops:',
-                        r'general\s+protection\s+fault',
-                        r'kernel\s+BUG\s+at',
-                        r'Unable\s+to\s+handle\s+kernel',
-                        r'WARNING:\s+CPU:',
-                        r'BUG:\s+unable\s+to\s+handle\s+kernel',
-                        r'invalid\s+opcode:',
-                        r'stack\s+segment:'
+                        # 匹配Oops和内核错误的各种模式
+                        r'Oops.*?(?:general protection|GPF).*?IP.*?[\da-fA-Fx]+',
+                        r'(?:kernel|Kernel).*?BUG.*?at.*?[\w/]+\.(?:c|h):\d+',
+                        r'(?:Unable to handle|Cannot handle).*?(?:kernel|NULL).*?pointer',
+                        r'WARNING.*?CPU.*?\d+.*?PID.*?\d+.*?at.*?[\w/]+',
+                        r'BUG.*?unable.*?handle.*?(?:kernel|page).*?fault',
+                        r'invalid.*?opcode.*?IP.*?[\da-fA-Fx]+',
+                        r'stack.*?segment.*?fault.*?address.*?[\da-fA-Fx]+',
+                        r'RIP.*?[\da-fA-Fx]+.*?Code.*?(?:Oops|BUG)',
+                        r'Call.*?Trace.*?(?:\[\w+\]|do_one_initcall)',
+                        r'divide.*?error.*?CPU.*?\d+.*?IP.*?[\da-fA-Fx]+'
                     ]
                 },
                 'deadlock': {
@@ -109,18 +126,17 @@ class ConfigManager:
                         'Call Trace for'
                     ],
                     'regex_patterns': [
-                        r'possible\s+deadlock',
-                        r'lock\s+held',
-                        r'blocked\s+for',
-                        r'stalled\s+for',
-                        r'hung\s+task',
-                        r'task\s+blocked',
-                        r'soft\s+lockup',
-                        r'hard\s+lockup',
-                        r'blocked\s+for\s+more\s+than\s+\d+\s+seconds',
-                        r'task\s+hung',
-                        r'Show\s+Blocked\s+State',
-                        r'Call\s+Trace\s+for'
+                        # 匹配死锁的各种模式
+                        r'(?:possible|potential).*?deadlock.*?(?:detected|found)',
+                        r'INFO.*?task.*?blocked.*?more.*?\d+.*?seconds',
+                        r'task.*?\w+.*?state.*?[RD].*?blocked.*?\d+.*?seconds',
+                        r'(?:soft|hard).*?lockup.*?CPU.*?\d+.*?stuck.*?\d+',
+                        r'hung.*?task.*?state.*?[RD].*?blocked',
+                        r'Show.*?Blocked.*?State.*?task.*?state.*?[RD]',
+                        r'Call.*?Trace.*?for.*?(?:mutex_lock|spin_lock)',
+                        r'detected.*?deadlock.*?between.*?\w+.*?and.*?\w+',
+                        r'lock.*?held.*?by.*?\w+.*?waiting.*?for.*?\w+',
+                        r'circular.*?dependency.*?detected.*?\w+.*?\w+'
                     ]
                 },
                 'fs_exception': {
@@ -138,15 +154,17 @@ class ConfigManager:
                         'Buffer I/O error'
                     ],
                     'regex_patterns': [
-                        r'filesystem\s+error',
-                        r'EXT4-fs\s+error',
-                        r'XFS\s+error',
-                        r'I/O\s+error',
-                        r'file\s+system\s+corruption',
-                        r'superblock\s+corrupt',
-                        r'metadata\s+corruption',
-                        r'fsck\s+needed',
-                        r'Buffer\s+I/O\s+error'
+                        # 匹配文件系统错误的各种模式
+                        r'(?:filesystem|file system).*?error.*?(?:corrupt|damage)',
+                        r'(?:EXT4|XFS|BTRFS|NTFS).*?(?:error|corruption).*?detected',
+                        r'I/O.*?error.*?dev.*?\w+.*?(?:sector|logical).*?\d+',
+                        r'(?:superblock|metadata).*?corrupt.*?(?:run.*?fsck|repair)',
+                        r'Buffer.*?I/O.*?error.*?dev.*?\w+.*?logical.*?\d+',
+                        r'journal.*?abort.*?I/O.*?error',
+                        r'file.*?system.*?corruption.*?(?:detected|found)',
+                        r'fsck.*?needed.*?(?:filesystem|partition)',
+                        r'read.*?error.*?sector.*?\d+.*?device.*?\w+',
+                        r'write.*?error.*?sector.*?\d+.*?device.*?\w+'
                     ]
                 }
             }

@@ -8,17 +8,21 @@ log_paths:
 detectors:
   oom:
     enabled: true
-    detection_mode: mixed  # 可单独覆盖全局模式
+    detection_mode: mixed
     keywords:
       - "Out of memory"
       - "oom-killer"
       - "Killed process"
       - "Memory cgroup out of memory"
     regex_patterns:
-      - "Out\\s+of\\s+memory"
-      - "oom[\\-\\s]*killer"
-      - "Killed\\s+process\\s+\\d+"
-      - "Memory\\s+cgroup\\s+out\\s+of\\s+memory"
+      - "(?:Out\\s+of\\s+memory|OOM).*?(?:kill|terminat).*?process.*?\\d+"
+      - "oom.*?killer.*?invoked.*?(?:gfp_mask|order)=\\w+"
+      - "(?:Killed|terminated).*?process.*?\\d+.*?(?:total-vm|rss).*?\\d+[kKmMgG]?B"
+      - "Memory.*?cgroup.*?out.*?memory.*?(?:usage|limit).*?\\d+"
+      - "oom_score.*?\\d+.*?pid.*?\\d+.*?total_vm.*?\\d+"
+      - "page allocation failure.*?order.*?\\d+"
+      - "compact.*?failed.*?order.*?\\d+"
+      - "swap.*?full.*?cannot.*?swap.*?out"
     
   panic:
     enabled: true
@@ -31,11 +35,14 @@ detectors:
       - "sysrq triggered crash"
       - "Unable to mount root"
     regex_patterns:
-      - "Kernel\\s+panic"
-      - "not\\s+syncing"
-      - "System\\s+halted"
-      - "sysrq\\s+triggered\\s+crash"
-      - "Unable\\s+to\\s+mount\\s+root"
+      - "(?:Kernel|kernel).*?panic.*?(?:not.*?syncing|System.*?halted)"
+      - "panic.*?(?:CPU|PID).*?\\d+.*?(?:not.*?syncing|System.*?halted)"
+      - "(?:sysrq|SysRq).*?trigger.*?crash.*?Kernel.*?panic"
+      - "(?:Unable to mount|Cannot mount).*?root.*?(?:filesystem|device)"
+      - "(?:VFS|Virtual File System).*?mount.*?root.*?failed"
+      - "end.*?Kernel.*?panic.*?(?:not.*?tty|sysrq)"
+      - "BUG.*?unable.*?handle.*?(?:kernel|NULL).*?at.*?0x[\\da-fA-F]+"
+      - "general protection fault.*?ip:.*?[\\da-fA-F]+.*?error:.*?\\d+"
       
   reboot:
     enabled: true
@@ -46,10 +53,14 @@ detectors:
       - "system reboot"
       - "restart triggered by hardware"
     regex_patterns:
-      - "unexpectedly\\s+shut\\s+down"
-      - "unexpected\\s+restart"
-      - "system\\s+reboot"
-      - "restart\\s+triggered\\s+by\\s+hardware"
+      - "(?:unexpected|unclean).*?(?:shut.*?down|restart|reboot)"
+      - "system.*?(?:reboot|restart).*?(?:initiated|triggered)"
+      - "(?:watchdog|hardware).*?trigger.*?(?:reboot|restart)"
+      - "power.*?(?:failure|loss).*?shut.*?down"
+      - "ACPI.*?enter.*?(?:S5|shutdown|reboot)"
+      - "systemd.*?reboot.*?target.*?start"
+      - "kernel.*?restart.*?preparing"
+      - "emergency.*?restart.*?initiated"
   
   oops:
     enabled: true
@@ -64,14 +75,16 @@ detectors:
       - "invalid opcode:"
       - "stack segment:"
     regex_patterns:
-      - "Oops:"
-      - "general\\s+protection\\s+fault"
-      - "kernel\\s+BUG\\s+at"
-      - "Unable\\s+to\\s+handle\\s+kernel"
-      - "WARNING:\\s+CPU:"
-      - "BUG:\\s+unable\\s+to\\s+handle\\s+kernel"
-      - "invalid\\s+opcode:"
-      - "stack\\s+segment:"
+      - "Oops.*?(?:general protection|GPF).*?IP.*?[\\da-fA-Fx]+"
+      - "(?:kernel|Kernel).*?BUG.*?at.*?[\\w/]+\\.(?:c|h):\\d+"
+      - "(?:Unable to handle|Cannot handle).*?(?:kernel|NULL).*?pointer"
+      - "WARNING.*?CPU.*?\\d+.*?PID.*?\\d+.*?at.*?[\\w/]+"
+      - "BUG.*?unable.*?handle.*?(?:kernel|page).*?fault"
+      - "invalid.*?opcode.*?IP.*?[\\da-fA-Fx]+"
+      - "stack.*?segment.*?fault.*?address.*?[\\da-fA-Fx]+"
+      - "RIP.*?[\\da-fA-Fx]+.*?Code.*?(?:Oops|BUG)"
+      - "Call.*?Trace.*?(?:\\[\\w+\\]|do_one_initcall)"
+      - "divide.*?error.*?CPU.*?\\d+.*?IP.*?[\\da-fA-Fx]+"
       
   deadlock:
     enabled: true
@@ -90,18 +103,16 @@ detectors:
       - "Show Blocked State"
       - "Call Trace for"
     regex_patterns:
-      - "possible\\s+deadlock"
-      - "lock\\s+held"
-      - "blocked\\s+for"
-      - "stalled\\s+for"
-      - "hung\\s+task"
-      - "task\\s+blocked"
-      - "soft\\s+lockup"
-      - "hard\\s+lockup"
-      - "blocked\\s+for\\s+more\\s+than\\s+\\d+\\s+seconds"
-      - "task\\s+hung"
-      - "Show\\s+Blocked\\s+State"
-      - "Call\\s+Trace\\s+for"
+      - "(?:possible|potential).*?deadlock.*?(?:detected|found)"
+      - "INFO.*?task.*?blocked.*?more.*?\\d+.*?seconds"
+      - "task.*?\\w+.*?state.*?[RD].*?blocked.*?\\d+.*?seconds"
+      - "(?:soft|hard).*?lockup.*?CPU.*?\\d+.*?stuck.*?\\d+"
+      - "hung.*?task.*?state.*?[RD].*?blocked"
+      - "Show.*?Blocked.*?State.*?task.*?state.*?[RD]"
+      - "Call.*?Trace.*?for.*?(?:mutex_lock|spin_lock)"
+      - "detected.*?deadlock.*?between.*?\\w+.*?and.*?\\w+"
+      - "lock.*?held.*?by.*?\\w+.*?waiting.*?for.*?\\w+"
+      - "circular.*?dependency.*?detected.*?\\w+.*?\\w+"
 
   fs_exception:
     enabled: true
@@ -117,12 +128,13 @@ detectors:
       - "fsck needed"
       - "Buffer I/O error"
     regex_patterns:
-      - "filesystem\\s+error"
-      - "EXT4-fs\\s+error"
-      - "XFS\\s+error"
-      - "I/O\\s+error"
-      - "file\\s+system\\s+corruption"
-      - "superblock\\s+corrupt"
-      - "metadata\\s+corruption"
-      - "fsck\\s+needed"
-      - "Buffer\\s+I/O\\s+error"
+      - "(?:filesystem|file system).*?error.*?(?:corrupt|damage)"
+      - "(?:EXT4|XFS|BTRFS|NTFS).*?(?:error|corruption).*?detected"
+      - "I/O.*?error.*?dev.*?\\w+.*?(?:sector|logical).*?\\d+"
+      - "(?:superblock|metadata).*?corrupt.*?(?:run.*?fsck|repair)"
+      - "Buffer.*?I/O.*?error.*?dev.*?\\w+.*?logical.*?\\d+"
+      - "journal.*?abort.*?I/O.*?error"
+      - "file.*?system.*?corruption.*?(?:detected|found)"
+      - "fsck.*?needed.*?(?:filesystem|partition)"
+      - "read.*?error.*?sector.*?\\d+.*?device.*?\\w+"
+      - "write.*?error.*?sector.*?\\d+.*?device.*?\\w+"

@@ -2,75 +2,127 @@
 
 ## 概述
 
-本项目支持三种检测模式：
-1. **keyword** - 纯关键字匹配（原有功能）
-2. **regex** - 纯正则表达式匹配
-3. **mixed** - 关键字和正则表达式混合匹配
+本项目支持三种检测模式，新的正则表达式设计能够处理：
+1. **被分隔的关键词** - 关键词中间插入其他内容
+2. **内在规律** - 基于错误模式的规律而非固定关键词
+3. **变体表达** - 同一概念的不同表达方式
 
-## 正则表达式规则说明
+## 正则表达式设计原则
+
+### 1. 使用非贪婪匹配处理分隔关键词
+- `.*?` 匹配任意字符（非贪婪），允许关键词之间插入内容
+- 例如：`Out.*?of.*?memory` 可以匹配 "Out of memory"、"Out - of - memory" 等
+
+### 2. 使用分组和可选匹配处理变体
+- `(?:pattern1|pattern2)` 非捕获组，匹配多个变体
+- 例如：`(?:kill|terminat)` 匹配 "kill" 或 "terminate"
+
+### 3. 基于内在规律而非固定关键词
+- 匹配错误代码模式、数字模式、地址模式等
+- 例如：`IP.*?[\da-fA-Fx]+` 匹配指令指针地址
+
+## 正则表达式规则详解
 
 ### OOM (内存不足) 检测
-- `Out\s+of\s+memory` - 匹配"Out of memory"及其变体
-- `oom[\-\s]*killer` - 匹配"oom-killer"、"oom killer"等
-- `Killed\s+process\s+\d+` - 匹配"Killed process 1234"格式
-- `Memory\s+cgroup\s+out\s+of\s+memory` - 匹配cgroup内存不足
+- `(?:Out\s+of\s+memory|OOM).*?(?:kill|terminat).*?process.*?\d+`
+  - 匹配各种OOM表达方式，包括被分隔的短语
+  - 示例匹配："Out - of - memory: kill process 1234"
+
+- `oom.*?killer.*?invoked.*?(?:gfp_mask|order)=\w+`
+  - 匹配oom-killer调用及其参数
+  - 示例匹配："oom killer invoked gfp_mask=0x201da"
+
+- `(?:Killed|terminated).*?process.*?\d+.*?(?:total-vm|rss).*?\d+[kKmMgG]?B`
+  - 匹配进程终止及内存统计信息
+  - 示例匹配："Killed process 1234 total-vm:123456kB"
 
 ### Kernel Panic 检测
-- `Kernel\s+panic` - 匹配内核恐慌
-- `not\s+syncing` - 匹配"not syncing"错误
-- `System\s+halted` - 匹配系统停止
-- `sysrq\s+triggered\s+crash` - 匹配SysRq触发的崩溃
-- `Unable\s+to\s+mount\s+root` - 匹配无法挂载根文件系统
+- `(?:Kernel|kernel).*?panic.*?(?:not.*?syncing|System.*?halted)`
+  - 匹配各种内核恐慌表达方式
+  - 示例匹配："Kernel panic - not syncing: System halted"
+
+- `panic.*?(?:CPU|PID).*?\d+.*?(?:not.*?syncing|System.*?halted)`
+  - 匹配包含CPU/PID信息的恐慌
+  - 示例匹配："panic: CPU 1 PID 1234 not syncing"
+
+- `(?:sysrq|SysRq).*?trigger.*?crash.*?Kernel.*?panic`
+  - 匹配SysRq触发的崩溃
+  - 示例匹配："sysrq triggered crash - Kernel panic"
 
 ### 系统重启检测
-- `unexpectedly\s+shut\s+down` - 匹配意外关机
-- `unexpected\s+restart` - 匹配意外重启
-- `system\s+reboot` - 匹配系统重启
-- `restart\s+triggered\s+by\s+hardware` - 匹配硬件触发的重启
+- `(?:unexpected|unclean).*?(?:shut.*?down|restart|reboot)`
+  - 匹配各种意外重启表达方式
+  - 示例匹配："unexpected system shut down"
+
+- `system.*?(?:reboot|restart).*?(?:initiated|triggered)`
+  - 匹配系统重启的各种表达
+  - 示例匹配："system reboot initiated by user"
 
 ### OOPS 检测
-- `Oops:` - 匹配Oops错误
-- `general\s+protection\s+fault` - 匹配一般保护错误
-- `kernel\s+BUG\s+at` - 匹配内核BUG
-- `Unable\s+to\s+handle\s+kernel` - 匹配无法处理的内核错误
-- `WARNING:\s+CPU:` - 匹配CPU警告
-- `BUG:\s+unable\s+to\s+handle\s+kernel` - 匹配无法处理的内核BUG
-- `invalid\s+opcode:` - 匹配无效操作码
-- `stack\s+segment:` - 匹配堆栈段错误
+- `Oops.*?(?:general protection|GPF).*?IP.*?[\da-fA-Fx]+`
+  - 匹配Oops错误及指令指针
+  - 示例匹配："Oops: general protection fault IP: ffffffff12345678"
+
+- `(?:kernel|Kernel).*?BUG.*?at.*?[\w/]+\.(?:c|h):\d+`
+  - 匹配内核BUG位置信息
+  - 示例匹配："kernel BUG at /path/to/file.c:123"
+
+- `Call.*?Trace.*?(?:\[\w+\]|do_one_initcall)`
+  - 匹配调用栈跟踪模式
+  - 示例匹配："Call Trace: [<ffffffff12345678>] do_one_initcall+0x50/0x100"
 
 ### 死锁检测
-- `possible\s+deadlock` - 匹配可能的死锁
-- `lock\s+held` - 匹配锁持有
-- `blocked\s+for` - 匹配阻塞时间
-- `stalled\s+for` - 匹配停滞时间
-- `hung\s+task` - 匹配挂起任务
-- `task\s+blocked` - 匹配任务阻塞
-- `soft\s+lockup` - 匹配软锁
-- `hard\s+lockup` - 匹配硬锁
-- `blocked\s+for\s+more\s+than\s+\d+\s+seconds` - 匹配阻塞超过指定秒数
-- `task\s+hung` - 匹配任务挂起
-- `Show\s+Blocked\s+State` - 匹配显示阻塞状态
-- `Call\s+Trace\s+for` - 匹配调用跟踪
+- `(?:possible|potential).*?deadlock.*?(?:detected|found)`
+  - 匹配可能的死锁检测
+  - 示例匹配："possible deadlock detected in driver"
+
+- `INFO.*?task.*?blocked.*?more.*?\d+.*?seconds`
+  - 匹配任务阻塞超时信息
+  - 示例匹配："INFO: task java blocked for more than 120 seconds"
+
+- `(?:soft|hard).*?lockup.*?CPU.*?\d+.*?stuck.*?\d+`
+  - 匹配软硬锁死信息
+  - 示例匹配："soft lockup detected on CPU 1 stuck for 10s"
 
 ### 文件系统异常检测
-- `filesystem\s+error` - 匹配文件系统错误
-- `EXT4-fs\s+error` - 匹配EXT4文件系统错误
-- `XFS\s+error` - 匹配XFS文件系统错误
-- `I/O\s+error` - 匹配I/O错误
-- `file\s+system\s+corruption` - 匹配文件系统损坏
-- `superblock\s+corrupt` - 匹配超级块损坏
-- `metadata\s+corruption` - 匹配元数据损坏
-- `fsck\s+needed` - 匹配需要fsck
-- `Buffer\s+I/O\s+error` - 匹配缓冲I/O错误
+- `(?:filesystem|file system).*?error.*?(?:corrupt|damage)`
+  - 匹配文件系统错误及损坏
+  - 示例匹配："filesystem error: superblock corrupt"
 
-## 使用方式
+- `(?:EXT4|XFS|BTRFS|NTFS).*?(?:error|corruption).*?detected`
+  - 匹配各种文件系统错误
+  - 示例匹配："EXT4-fs error (device sda1): corruption detected"
 
-### 通过配置文件设置
-在配置文件的全局设置或单个检测器设置中指定：
-```yaml
-detection_mode: mixed  # 全局模式
+- `I/O.*?error.*?dev.*?\w+.*?(?:sector|logical).*?\d+`
+  - 匹配I/O错误及设备信息
+  - 示例匹配："I/O error on device sda1 sector 123456"
 
-detectors:
-  oom:
-    enabled: true
-    detection_mode: regex  # 单个检测器模式
+## 测试示例
+
+### 测试非标准格式日志
+```python
+import re
+
+# 测试被分隔的OOM日志
+pattern = r'(?:Out\s+of\s+memory|OOM).*?(?:kill|terminat).*?process.*?\d+'
+test_lines = [
+    "Out of memory: kill process 1234",  # 标准格式
+    "OOM - killing process 5678",        # 分隔格式
+    "Out of memory: terminate task 9012" # 变体表达
+]
+
+for line in test_lines:
+    if re.search(pattern, line, re.IGNORECASE):
+        print(f"匹配: {line}")
+
+# 测试内在规律（调用栈）
+pattern = r'Call.*?Trace.*?(?:\[\w+\]|do_one_initcall)'
+test_lines = [
+    "Call Trace:",
+    "Call Trace for deadlock:",
+    "Backtrace: [<ffffffff12345678>] do_one_initcall+0x50/0x100"
+]
+
+for line in test_lines:
+    if re.search(pattern, line, re.IGNORECASE):
+        print(f"匹配调用栈: {line}")
