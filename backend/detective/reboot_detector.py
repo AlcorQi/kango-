@@ -7,19 +7,18 @@ class RebootDetector(BaseDetector):
         super().__init__("reboot", config)
         
     def detect(self, line):
-        if not self.enabled:
-            return None
-            
         keywords = self.config.get('keywords', [])
+        regex_patterns = self.config.get('regex_patterns', [])
         
-        if self.match_keywords(line, keywords):
+        if self.detect_line(line, keywords, regex_patterns):
             return {
                 'type': 'reboot',
                 'severity': 'medium',
                 'message': line.strip(),
                 'timestamp': time.time(),
                 'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-                'raw_line': line
+                'raw_line': line,
+                'detection_mode': self.detection_mode
             }
             
         return None
@@ -47,7 +46,8 @@ class RebootDetector(BaseDetector):
                     'timestamp': time.time(),
                     'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S'),
                     'file': 'system_uptime',
-                    'line_number': 0
+                    'line_number': 0,
+                    'detection_mode': 'system'
                 })
                 
         except Exception as e:

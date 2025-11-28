@@ -15,8 +15,13 @@ from report.report_generator import ReportGenerator
 from llm.llm_analyzer import LLMAnalyzer  # 新增导入
 
 class ExceptionMonitor:
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None, detection_mode=None):
         self.config_manager = ConfigManager(config_path)
+        
+        # 如果命令行指定了检测模式，覆盖配置文件
+        if detection_mode:
+            self.config_manager.config['detection_mode'] = detection_mode
+            
         self.file_scanner = FileScanner(self.config_manager)
         self.detector_manager = DetectorManager(self.config_manager)
         self.result_manager = ResultManager()
@@ -24,7 +29,9 @@ class ExceptionMonitor:
         self.report_generator = ReportGenerator(self.result_manager, self.file_scanner)
         self.llm_analyzer = LLMAnalyzer()  # 新增LLM分析器
         
+        current_mode = self.config_manager.get_global_detection_mode()
         print(f"✅ 已启用 {len(self.detector_manager.detectors)} 个检测器")
+        print(f"🔧 当前检测模式: {current_mode.upper()}")
     
     def scan_logs(self):
         """扫描日志文件"""
@@ -138,21 +145,26 @@ def parse_args():
     parser.add_argument('--sysrq-check', action='store_true',
                        help='启用SysRq死锁检测（需要root权限）')
     
+    # 新增检测模式参数
+    parser.add_argument('--detection-mode',
+                       choices=['keyword', 'regex', 'mixed'],
+                       help='指定检测模式: keyword(纯关键字), regex(纯正则), mixed(混合模式)')
+    
     return parser.parse_args()
 
 def main():
     """主程序入口"""
     print("=" * 60)
-    print("🖥️  操作系统异常信息检测工具 v2.0")
-    print("增强特性: 系统状态检测(SysRq死锁、崩溃转储分析、oops误报修复)")
-    print("新增特性: 大语言模型智能分析")
+    print("🖥️  操作系统异常信息检测工具 v2.1")
+    print("增强特性: 支持三种检测模式(关键字/正则表达式/混合模式)")
+    print("新增特性: 正则表达式检测，更精准的模式匹配")
     print("=" * 60)
     
     # 解析命令行参数
     args = parse_args()
     
     # 创建监控实例并执行扫描
-    monitor = ExceptionMonitor(args.config)
+    monitor = ExceptionMonitor(args.config, args.detection_mode)
     monitor.scan_logs()
     
     # 保存报告
@@ -167,6 +179,7 @@ def main():
         print("💡 提示: 使用 --sysrq-check 参数需要root权限以获得更精确的死锁检测")
     if args.llm_analysis:
         print("💡 提示: 大语言模型分析报告已生成，请查看详细建议")
+    print(f"💡 检测模式: {monitor.config_manager.get_global_detection_mode().upper()}")
 
 if __name__ == "__main__":
     main()

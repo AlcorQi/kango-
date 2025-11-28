@@ -10,6 +10,7 @@ class ConfigManager:
     def get_default_config(self):
         """获取默认配置"""
         return {
+            'detection_mode': 'mixed',  # 全局检测模式: keyword, regex, mixed
             'log_paths': [
                 '/var/log',
                 './backend/log/test.log'
@@ -17,35 +18,58 @@ class ConfigManager:
             'detectors': {
                 'oom': {
                     'enabled': True,
+                    'detection_mode': 'mixed',  # 可单独覆盖全局模式
                     'keywords': [
                         'Out of memory',
                         'oom-killer',
                         'Killed process',
                         'Memory cgroup out of memory'
+                    ],
+                    'regex_patterns': [
+                        r'Out\s+of\s+memory',
+                        r'oom[\-\s]*killer',
+                        r'Killed\s+process\s+\d+',
+                        r'Memory\s+cgroup\s+out\s+of\s+memory'
                     ]
                 },
                 'panic': {
                     'enabled': True,
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'Kernel panic',
                         'kernel panic',
                         'not syncing',
                         'System halted',
-                        'sysrq triggered crash',  # 新增关键词
-                        'Unable to mount root'    # 新增关键词
+                        'sysrq triggered crash',
+                        'Unable to mount root'
+                    ],
+                    'regex_patterns': [
+                        r'Kernel\s+panic',
+                        r'not\s+syncing',
+                        r'System\s+halted',
+                        r'sysrq\s+triggered\s+crash',
+                        r'Unable\s+to\s+mount\s+root'
                     ]
                 },
                 'reboot': {
                     'enabled': True,
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'unexpectedly shut down',
                         'unexpected restart',
                         'system reboot',
-                        'restart triggered by hardware'  # 新增关键词
+                        'restart triggered by hardware'
+                    ],
+                    'regex_patterns': [
+                        r'unexpectedly\s+shut\s+down',
+                        r'unexpected\s+restart',
+                        r'system\s+reboot',
+                        r'restart\s+triggered\s+by\s+hardware'
                     ]
                 },
                 'oops': {
                     'enabled': True,
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'Oops:',
                         'general protection fault',
@@ -55,10 +79,21 @@ class ConfigManager:
                         'BUG: unable to handle kernel',
                         'invalid opcode:',
                         'stack segment:'
+                    ],
+                    'regex_patterns': [
+                        r'Oops:',
+                        r'general\s+protection\s+fault',
+                        r'kernel\s+BUG\s+at',
+                        r'Unable\s+to\s+handle\s+kernel',
+                        r'WARNING:\s+CPU:',
+                        r'BUG:\s+unable\s+to\s+handle\s+kernel',
+                        r'invalid\s+opcode:',
+                        r'stack\s+segment:'
                     ]
                 },
                 'deadlock': {
                     'enabled': True,
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'possible deadlock',
                         'lock held',
@@ -68,14 +103,29 @@ class ConfigManager:
                         'task blocked',
                         'soft lockup',
                         'hard lockup',
-                        'blocked for more than 120 seconds',  # 新增关键词
-                        'task hung',  # 新增关键词
-                        'Show Blocked State',  # 新增关键词
-                        'Call Trace for'  # 新增关键词
+                        'blocked for more than 120 seconds',
+                        'task hung',
+                        'Show Blocked State',
+                        'Call Trace for'
+                    ],
+                    'regex_patterns': [
+                        r'possible\s+deadlock',
+                        r'lock\s+held',
+                        r'blocked\s+for',
+                        r'stalled\s+for',
+                        r'hung\s+task',
+                        r'task\s+blocked',
+                        r'soft\s+lockup',
+                        r'hard\s+lockup',
+                        r'blocked\s+for\s+more\s+than\s+\d+\s+seconds',
+                        r'task\s+hung',
+                        r'Show\s+Blocked\s+State',
+                        r'Call\s+Trace\s+for'
                     ]
                 },
                 'fs_exception': {
                     'enabled': True,
+                    'detection_mode': 'mixed',
                     'keywords': [
                         'filesystem error',
                         'EXT4-fs error',
@@ -85,7 +135,18 @@ class ConfigManager:
                         'superblock corrupt',
                         'metadata corruption',
                         'fsck needed',
-                        'Buffer I/O error'  # 新增关键词
+                        'Buffer I/O error'
+                    ],
+                    'regex_patterns': [
+                        r'filesystem\s+error',
+                        r'EXT4-fs\s+error',
+                        r'XFS\s+error',
+                        r'I/O\s+error',
+                        r'file\s+system\s+corruption',
+                        r'superblock\s+corrupt',
+                        r'metadata\s+corruption',
+                        r'fsck\s+needed',
+                        r'Buffer\s+I/O\s+error'
                     ]
                 }
             }
@@ -116,8 +177,18 @@ class ConfigManager:
     
     def get_detector_config(self, detector_name):
         """获取指定检测器的配置"""
-        return self.config.get('detectors', {}).get(detector_name, {})
+        detector_config = self.config.get('detectors', {}).get(detector_name, {})
+        
+        # 如果没有设置检测器特定的模式，使用全局模式
+        if 'detection_mode' not in detector_config:
+            detector_config['detection_mode'] = self.config.get('detection_mode', 'keyword')
+            
+        return detector_config
     
     def get_log_paths(self):
         """获取日志路径配置"""
         return self.config.get('log_paths', [])
+    
+    def get_global_detection_mode(self):
+        """获取全局检测模式"""
+        return self.config.get('detection_mode', 'keyword')

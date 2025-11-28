@@ -6,15 +6,16 @@ class FSExceptionDetector(BaseDetector):
         super().__init__("fs_exception", config)
 
     def detect(self, line):
-        if not self.enabled:
-            return None
         keywords = self.config.get('keywords', [])
-        if self.match_keywords(line, keywords):
+        regex_patterns = self.config.get('regex_patterns', [])
+        
+        if self.detect_line(line, keywords, regex_patterns):
             return {
                 'type': 'fs_exception',
                 'severity': 'major',
                 'message': line.strip(),
                 'timestamp': time.time(),
-                'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S')
+                'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+                'detection_mode': self.detection_mode
             }
         return None
