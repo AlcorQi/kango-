@@ -7,17 +7,17 @@ class PanicDetector(BaseDetector):
         super().__init__("panic", config)
         
     def detect(self, line):
-        if not self.enabled:
-            return None
-            
         keywords = self.config.get('keywords', [])
-        if self.match_keywords(line, keywords):
+        regex_patterns = self.config.get('regex_patterns', [])
+        
+        if self.detect_line(line, keywords, regex_patterns):
             return {
                 'type': 'panic',
                 'severity': 'critical',
                 'message': line.strip(),
                 'timestamp': time.time(),
-                'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S')
+                'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+                'detection_mode': self.detection_mode
             }
         return None
     
@@ -45,7 +45,8 @@ class PanicDetector(BaseDetector):
                 'timestamp': time.time(),
                 'formatted_time': time.strftime('%Y-%m-%d %H:%M:%S'),
                 'file': 'crash_dump',
-                'line_number': 0
+                'line_number': 0,
+                'detection_mode': 'system'
                             })
                 except PermissionError:
                     continue

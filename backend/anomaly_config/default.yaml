@@ -1,3 +1,6 @@
+# 全局检测模式配置: keyword, regex, mixed
+detection_mode: mixed
+
 log_paths:
   - "/var/log"
   - "./test.log"
@@ -5,14 +8,21 @@ log_paths:
 detectors:
   oom:
     enabled: true
+    detection_mode: mixed  # 可单独覆盖全局模式
     keywords:
       - "Out of memory"
       - "oom-killer"
       - "Killed process"
       - "Memory cgroup out of memory"
+    regex_patterns:
+      - "Out\\s+of\\s+memory"
+      - "oom[\\-\\s]*killer"
+      - "Killed\\s+process\\s+\\d+"
+      - "Memory\\s+cgroup\\s+out\\s+of\\s+memory"
     
   panic:
     enabled: true
+    detection_mode: mixed
     keywords:
       - "Kernel panic"
       - "kernel panic"
@@ -20,18 +30,30 @@ detectors:
       - "System halted"
       - "sysrq triggered crash"
       - "Unable to mount root"
+    regex_patterns:
+      - "Kernel\\s+panic"
+      - "not\\s+syncing"
+      - "System\\s+halted"
+      - "sysrq\\s+triggered\\s+crash"
+      - "Unable\\s+to\\s+mount\\s+root"
       
   reboot:
     enabled: true
+    detection_mode: mixed
     keywords:
       - "unexpectedly shut down"
       - "unexpected restart"
       - "system reboot"
       - "restart triggered by hardware"
+    regex_patterns:
+      - "unexpectedly\\s+shut\\s+down"
+      - "unexpected\\s+restart"
+      - "system\\s+reboot"
+      - "restart\\s+triggered\\s+by\\s+hardware"
   
-  # 新增检测器配置
   oops:
     enabled: true
+    detection_mode: mixed
     keywords:
       - "Oops:"
       - "general protection fault"
@@ -41,9 +63,19 @@ detectors:
       - "BUG: unable to handle kernel"
       - "invalid opcode:"
       - "stack segment:"
+    regex_patterns:
+      - "Oops:"
+      - "general\\s+protection\\s+fault"
+      - "kernel\\s+BUG\\s+at"
+      - "Unable\\s+to\\s+handle\\s+kernel"
+      - "WARNING:\\s+CPU:"
+      - "BUG:\\s+unable\\s+to\\s+handle\\s+kernel"
+      - "invalid\\s+opcode:"
+      - "stack\\s+segment:"
       
   deadlock:
     enabled: true
+    detection_mode: mixed
     keywords:
       - "possible deadlock"
       - "lock held"
@@ -57,10 +89,23 @@ detectors:
       - "task hung"
       - "Show Blocked State"
       - "Call Trace for"
+    regex_patterns:
+      - "possible\\s+deadlock"
+      - "lock\\s+held"
+      - "blocked\\s+for"
+      - "stalled\\s+for"
+      - "hung\\s+task"
+      - "task\\s+blocked"
+      - "soft\\s+lockup"
+      - "hard\\s+lockup"
+      - "blocked\\s+for\\s+more\\s+than\\s+\\d+\\s+seconds"
+      - "task\\s+hung"
+      - "Show\\s+Blocked\\s+State"
+      - "Call\\s+Trace\\s+for"
 
-      
   fs_exception:
     enabled: true
+    detection_mode: mixed
     keywords:
       - "filesystem error"
       - "EXT4-fs error"
@@ -71,3 +116,13 @@ detectors:
       - "metadata corruption"
       - "fsck needed"
       - "Buffer I/O error"
+    regex_patterns:
+      - "filesystem\\s+error"
+      - "EXT4-fs\\s+error"
+      - "XFS\\s+error"
+      - "I/O\\s+error"
+      - "file\\s+system\\s+corruption"
+      - "superblock\\s+corrupt"
+      - "metadata\\s+corruption"
+      - "fsck\\s+needed"
+      - "Buffer\\s+I/O\\s+error"
