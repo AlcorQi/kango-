@@ -747,7 +747,7 @@ def cleanup_loop():
                             pass
         except:
             pass
-        time.sleep(600)
+        time.sleep(1)
 
 if __name__ == '__main__':
     run()
