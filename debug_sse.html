@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Debug Test</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>SSE连接调试测试</h1>
+    <div id="status">等待连接...</div>
+    <div style="margin:12px 0; padding:12px; background:#fafafa; border:1px solid #ddd;">
+        <div style="font-weight:bold; margin-bottom:8px;">前端配置管理</div>
+        <label>URL
+            <input id="cfg_url" style="width:480px; margin-left:8px" placeholder="http://localhost:8000/api/v1/stream">
+        </label>
+        <label style="margin-left:16px">
+            <input type="checkbox" id="cfg_withCredentials"> 携带凭证
+        </label>
+        <label style="margin-left:16px">
+            <input type="checkbox" id="cfg_autoReconnect"> 自动重连
+        </label>
+        <label style="margin-left:16px">重连间隔(ms)
+            <input id="cfg_reconnectInterval" type="number" value="5000" style="width:90px; margin-left:8px">
+        </label>
+        <label style="margin-left:16px">事件列表(逗号分隔)
+            <input id="cfg_events" style="width:240px; margin-left:8px" placeholder="open,anomaly,ping,message">
+        </label>
+        <div style="margin-top:10px">
+            <button id="btn_save">保存配置</button>
+            <button id="btn_start" style="margin-left:8px">启动连接</button>
+            <button id="btn_stop" style="margin-left:8px">停止连接</button>
+            <button id="btn_reset" style="margin-left:8px">重置配置</button>
+            <button id="btn_check" style="margin-left:8px">检测是否可用</button>
+        </div>
+        <div id="cfg_result" style="margin-top:8px; color:#555"></div>
+    </div>
+    <div id="log" style="font-family: monospace; white-space: pre-wrap; background: #f0f0f0; padding: 10px; margin: 10px 0; height: 300px; overflow-y: auto;"></div>
+    <script>
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        const urlInput = document.getElementById('cfg_url');
+        const withCredentialsInput = document.getElementById('cfg_withCredentials');
+        const autoReconnectInput = document.getElementById('cfg_autoReconnect');
+        const reconnectIntervalInput = document.getElementById('cfg_reconnectInterval');
+        const eventsInput = document.getElementById('cfg_events');
+        const btnSave = document.getElementById('btn_save');
+        const btnStart = document.getElementById('btn_start');
+        const btnStop = document.getElementById('btn_stop');
+        const btnReset = document.getElementById('btn_reset');
+        const btnCheck = document.getElementById('btn_check');
+        const cfgResult = document.getElementById('cfg_result');
+
+        let es = null;
+        let reconnectTimer = null;
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function setStatus(text, color) {
+            status.textContent = text;
+            status.style.color = color || '#333';
+        }
+
+        function defaultConfig() {
+            return {
+                url: 'http://localhost:8000/api/v1/stream',
+                withCredentials: false,
+                autoReconnect: true,
+                reconnectInterval: 5000,
+                events: ['open','anomaly','ping','message']
+            };
+        }
+
+        function loadConfig() {
+            try {
+                const raw = localStorage.getItem('sseConfig');
+                if (!raw) return defaultConfig();
+                const cfg = JSON.parse(raw);
+                if (!cfg.url) cfg.url = defaultConfig().url;
+                if (typeof cfg.withCredentials !== 'boolean') cfg.withCredentials = false;
+                if (typeof cfg.autoReconnect !== 'boolean') cfg.autoReconnect = true;
+                if (!cfg.reconnectInterval || cfg.reconnectInterval < 0) cfg.reconnectInterval = 5000;
+                if (!Array.isArray(cfg.events) || cfg.events.length === 0) cfg.events = defaultConfig().events;
+                return cfg;
+            } catch (e) {
+                return defaultConfig();
+            }
+        }
+
+        function saveConfig(cfg) {
+            localStorage.setItem('sseConfig', JSON.stringify(cfg));
+        }
+
+        function renderConfig(cfg) {
+            urlInput.value = cfg.url;
+            withCredentialsInput.checked = cfg.withCredentials;
+            autoReconnectInput.checked = cfg.autoReconnect;
+            reconnectIntervalInput.value = cfg.reconnectInterval;
+            eventsInput.value = cfg.events.join(',');
+        }
+
+        function readConfigFromUI() {
+            const events = eventsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            return {
+                url: urlInput.value.trim() || defaultConfig().url,
+                withCredentials: !!withCredentialsInput.checked,
+                autoReconnect: !!autoReconnectInput.checked,
+                reconnectInterval: Math.max(0, parseInt(reconnectIntervalInput.value, 10) || 0),
+                events: events.length ? events : defaultConfig().events
+            };
+        }
+
+        function validateConfig(cfg) {
+            const errors = [];
+            try {
+                const u = new URL(cfg.url);
+                if (!['http:', 'https:'].includes(u.protocol)) errors.push('URL协议必须为http或https');
+            } catch (e) {
+                errors.push('URL格式不正确');
+            }
+            if (cfg.reconnectInterval && cfg.reconnectInterval < 500) errors.push('重连间隔建议≥500ms');
+            if (!Array.isArray(cfg.events) || cfg.events.length === 0) errors.push('事件列表不能为空');
+            return { ok: errors.length === 0, errors };
+        }
+
+        function attachListeners(esObj, cfg) {
+            esObj.onopen = function() {
+                setStatus('连接已建立', 'green');
+                addLog('✓ SSE连接成功打开');
+                addLog('连接状态: ' + esObj.readyState);
+            };
+            esObj.onerror = function(event) {
+                setStatus('连接错误', 'red');
+                addLog('✗ SSE连接错误');
+                addLog('错误类型: ' + event.type);
+                addLog('连接状态: ' + esObj.readyState);
+                addLog('URL: ' + esObj.url);
+                if (cfg.autoReconnect) scheduleReconnect(cfg);
+            };
+            cfg.events.forEach(ev => {
+                if (ev === 'message') {
+                    esObj.onmessage = function(e) { addLog('收到消息: ' + e.data); };
+                } else {
+                    esObj.addEventListener(ev, function(e) { addLog('收到' + ev + '事件: ' + e.data); });
+                }
+            });
+        }
+
+        function start(cfg) {
+            stop();
+            const val = validateConfig(cfg);
+            if (!val.ok) {
+                cfgResult.textContent = '配置错误: ' + val.errors.join('；');
+                setStatus('配置无效', 'red');
+                return;
+            }
+            cfgResult.textContent = '配置有效';
+            addLog('创建EventSource对象...');
+            es = new EventSource(cfg.url, { withCredentials: cfg.withCredentials });
+            attachListeners(es, cfg);
+            addLog('EventSource对象创建成功');
+            addLog('URL: ' + es.url);
+            addLog('连接状态: ' + es.readyState);
+        }
+
+        function stop() {
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            if (es) {
+                es.close();
+                es = null;
+                setStatus('连接已关闭', '#333');
+                addLog('连接关闭');
+            }
+        }
+
+        function scheduleReconnect(cfg) {
+            if (reconnectTimer) return;
+            reconnectTimer = setTimeout(function() {
+                reconnectTimer = null;
+                addLog('尝试重连...');
+                start(cfg);
+            }, cfg.reconnectInterval || 1000);
+        }
+
+        function detectUsable(cfg) {
+            const support = !!window.EventSource;
+            if (!support) {
+                cfgResult.textContent = '当前浏览器不支持SSE';
+                setStatus('不支持SSE', 'red');
+                return;
+            }
+            const val = validateConfig(cfg);
+            if (!val.ok) {
+                cfgResult.textContent = '配置错误: ' + val.errors.join('；');
+                setStatus('配置无效', 'red');
+                return;
+            }
+            let done = false;
+            stop();
+            const test = new EventSource(cfg.url, { withCredentials: cfg.withCredentials });
+            const finishOk = function() {
+                if (done) return;
+                done = true;
+                test.close();
+                cfgResult.textContent = '可用';
+                setStatus('连接可用', 'green');
+            };
+            const finishErr = function(msg) {
+                if (done) return;
+                done = true;
+                test.close();
+                cfgResult.textContent = '不可用: ' + msg;
+                setStatus('连接不可用', 'red');
+            };
+            test.onopen = finishOk;
+            test.onerror = function(e) { finishErr(e.type || '错误'); };
+            setTimeout(function() { if (!done) finishErr('超时'); }, 8000);
+        }
+
+        btnSave.onclick = function() {
+            const cfg = readConfigFromUI();
+            saveConfig(cfg);
+            const v = validateConfig(cfg);
+            cfgResult.textContent = v.ok ? '配置已保存' : ('配置错误: ' + v.errors.join('；'));
+        };
+        btnStart.onclick = function() { const cfg = readConfigFromUI(); saveConfig(cfg); start(cfg); };
+        btnStop.onclick = function() { stop(); };
+        btnReset.onclick = function() { const cfg = defaultConfig(); renderConfig(cfg); saveConfig(cfg); cfgResult.textContent = '已重置为默认配置'; };
+        btnCheck.onclick = function() { const cfg = readConfigFromUI(); detectUsable(cfg); };
+
+        (function init() {
+            const cfg = loadConfig();
+            renderConfig(cfg);
+            addLog('开始SSE连接测试...');
+        })();
+    </script>
+</body>
+</html>

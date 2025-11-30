@@ -18,21 +18,22 @@
 </header>
 <div class="container">
   <div id="toast" style="display:none"></div>
-  <div class="grid">
-    <div class="card">
-      <h3>异常总数</h3>
-      <div id="metric-total" class="metric">-</div>
-    </div>
-    <div class="card">
+      <div class="grid">
+        <div class="card">
+          <h3>异常总数</h3>
+          <div id="metric-total" class="metric">-</div>
+        </div>
+        <div class="card">
       <h3>严重异常</h3>
       <div id="metric-critical" class="metric">-</div>
     </div>
     <div class="card">
       <h3>检测状态</h3>
-      <div class="status"><span class="dot ok"></span><span id="metric-status">运行中</span></div>
-      <div style="margin-top:8px;color:#a7b1c9">最后检测时间：<span id="metric-last">-</span></div>
-    </div>
-  </div>
+          <div class="status"><span class="dot ok"></span><span id="metric-status">运行中</span></div>
+          <div style="margin-top:8px;color:#a7b1c9">最后检测到新异常时间：<span id="metric-last">-</span></div>
+          <div style="margin-top:4px;color:#a7b1c9">最后扫描时间：<span id="metric-last-scan">-</span></div>
+        </div>
+      </div>
 
   <div class="row" style="margin-top:16px">
     <div class="card" style="flex:1">
@@ -70,6 +71,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="./assets/dashboard.js"></script>
+<script type="module" src="./assets/dashboard.js?v=2"></script>
 </body>
 </html>

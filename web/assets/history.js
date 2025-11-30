@@ -1,4 +1,4 @@
-import{getEvents,fmtTime,sevPill,safe,toast}from"./api.js";
+import{getEvents,getConfig,fmtTime,sevPill,safe,toast}from"./api.js";
 let page=1,total=0,size=20,sort="detected_at:desc";
 function val(id){return document.getElementById(id)?.value||""}
 function checked(id){return Array.from(document.querySelectorAll(`#${id} input[type=checkbox]:checked`)).map(i=>i.value)}
@@ -7,4 +7,4 @@ function render(items){const tbody=document.getElementById("hist-body");tbody.in
 document.getElementById("btn-search").addEventListener("click",()=>{page=1;search()});
 document.getElementById("btn-prev").addEventListener("click",()=>{if(page>1){page--;search()}});
 document.getElementById("btn-next").addEventListener("click",()=>{page++;search()});
-search()
+getConfig().then(c=>{const sel=document.getElementById("q-size");const ps=(c.ui?.page_size)||20;const exists=Array.from(sel.options).some(o=>parseInt(o.value,10)===ps);if(!exists){const opt=document.createElement("option");opt.value=String(ps);opt.textContent=String(ps);sel.appendChild(opt)}sel.value=String(ps)}).catch(()=>{}).finally(()=>{search()})

@@ -9,6 +9,7 @@ from data_store import read_summary, compute_stats, iter_anomalies, parse_iso
 from sse_manager import add_client, remove_client, heartbeat_loop, tailer_loop
 from ai_provider import ai_provider
 from response_utils import json_response, error_response
+from ingest_manager import ingest_loop, cleanup_loop, init_alert_state
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -208,10 +209,14 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             si = cfg['detection']['scan_interval_sec']
             rd = cfg['detection']['retention_days']
+            rmax = cfg['detection'].get('retention_max_events', 50000)
             if not (5 <= si <= 3600):
                 return error_response(self, 400, 'INVALID_ARGUMENT', 'scan_interval_sec out of range')
             if not (1 <= rd <= 365):
                 return error_response(self, 400, 'INVALID_ARGUMENT', 'retention_days out of range')
+            if not (1 <= int(rmax) <= 1000000):
+                return error_response(self, 400, 'INVALID_ARGUMENT', 'retention_max_events out of range')
+            cfg['detection']['retention_max_events'] = int(rmax)
         except:
             return error_response(self, 400, 'INVALID_ARGUMENT', 'invalid detection config')
         
@@ -228,6 +233,9 @@ class Handler(SimpleHTTPRequestHandler):
 def run(host='0.0.0.0', port=8000):
     """启动服务器"""
     ensure_dirs()
+    init_alert_state()
+    threading.Thread(target=cleanup_loop, daemon=True).start()
+    threading.Thread(target=ingest_loop, daemon=True).start()
     httpd = ThreadingHTTPServer((host, port), Handler)
     print(f"服务器启动在 {host}:{port}")
     httpd.serve_forever()
