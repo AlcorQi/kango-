@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>注册 - 异常监控</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="./assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="container" style="max-width:460px;margin-top:60px">
+  <div class="card" style="padding:16px">
+    <h3>注册</h3>
+    <div class="toolbar"><label>账号</label><input id="u" class="input" placeholder="用户名"/></div>
+    <div class="toolbar"><label>密码</label><input id="p" class="input" type="password" placeholder="密码"/></div>
+    <div class="toolbar"><label>邮箱</label><input id="e" class="input" placeholder="name@example.com"/></div>
+    <button id="btn-send" class="btn primary" style="width:100%">发送验证码</button>
+    <div class="toolbar" style="margin-top:12px"><label>验证码</label><input id="c" class="input" placeholder="6位数字"/></div>
+    <button id="btn-verify" class="btn primary" style="width:100%">验证并完成注册</button>
+    <div style="margin-top:8px;text-align:center"><a href="./login.html">已有账号？登录</a></div>
+    <div id="msg" class="hint" style="margin-top:8px"></div>
+  </div>
+</div>
+<script>
+function regErr(resp){
+  return resp.text().then(t=>{try{const j=JSON.parse(t);const c=j.code||'';const m=(j.message||'').toLowerCase();if(c==='INVALID_ARGUMENT'&&m.includes('missing'))return '请填写完整信息';if(c==='INVALID_ARGUMENT'&&m.includes('email'))return '邮箱格式不正确';if(c==='ALREADY_EXISTS')return '用户已存在';if(c==='INTERNAL_ERROR')return '验证码发送失败，请检查邮件配置';return t||'注册失败';}catch(e){return t||'注册失败';}});
+}
+function verifyErr(resp){
+  return resp.text().then(t=>{try{const j=JSON.parse(t);const c=j.code||'';const m=(j.message||'').toLowerCase();if(c==='INVALID_ARGUMENT'&&m.includes('mismatch'))return '验证码不正确';if(c==='INVALID_ARGUMENT'&&m.includes('expired'))return '验证码已过期';if(c==='NOT_FOUND')return '用户不存在';return t||'验证失败';}catch(e){return t||'验证失败';}});
+}
+async function sendCode(){
+  const username=document.getElementById('u').value.trim();
+  const password=document.getElementById('p').value;
+  const email=document.getElementById('e').value.trim();
+  try{
+    const r=await fetch('/api/v1/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,email})});
+    let sent=false; try{const j=await r.json(); sent=!!j.sent;}catch{};
+    document.getElementById('msg').textContent= sent? '验证码已发送到邮箱' : '已尝试发送，请检查邮箱或稍后重试';
+  }catch(e){
+    document.getElementById('msg').textContent='网络错误';
+  }
+}
+async function verify(){
+  const username=document.getElementById('u').value.trim();
+  const code=document.getElementById('c').value.trim();
+  try{
+    const r=await fetch('/api/v1/register/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,code})});
+    if(r.status===200){
+      location.href='/login.html';
+    }else{
+      document.getElementById('msg').textContent=await verifyErr(r);
+    }
+  }catch(e){
+    document.getElementById('msg').textContent='网络错误';
+  }
+}
+document.getElementById('btn-send').onclick=sendCode;
+document.getElementById('btn-verify').onclick=verify;
+</script>
+</body>
+</html>

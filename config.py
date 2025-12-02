@@ -9,6 +9,7 @@ CONFIG_DIR = os.path.join(ROOT, 'config')
 ANOMALIES_FILE = os.path.join(DATA_DIR, 'anomalies.ndjson')
 SUMMARY_FILE = os.path.join(DATA_DIR, 'summary.json')
 CONFIG_FILE = os.path.join(CONFIG_DIR, 'config.json')
+USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 
 SCHEMA_VERSION = "1.0"
 
@@ -64,6 +65,9 @@ def ensure_dirs():
                     "sse_max_clients": 100
                 }
             }, f)
+    if not os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump({}, f)
 
 def read_config():
     """读取配置文件"""

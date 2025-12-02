@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>登录 - 异常监控</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="./assets/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="container" style="max-width:420px;margin-top:60px">
+  <div class="card" style="padding:16px">
+    <h3>登录</h3>
+    <div class="toolbar"><label>账号</label><input id="u" class="input" placeholder="用户名"/></div>
+    <div class="toolbar"><label>密码</label><input id="p" class="input" type="password" placeholder="密码"/></div>
+    <button id="btn" class="btn primary" style="width:100%">登录</button>
+    <div style="margin-top:8px;text-align:center"><a href="./register.html">没有账号？注册</a></div>
+    <div id="msg" class="hint" style="margin-top:8px;color:#c7493a"></div>
+  </div>
+</div>
+<script>
+function cnMsg(resp){
+  return resp.text().then(t=>{try{const j=JSON.parse(t);const c=j.code||'';const m=(j.message||'').toLowerCase();if(c==='UNAUTHORIZED'&&m.includes('invalid user'))return '用户不存在或未验证';if(c==='UNAUTHORIZED'&&m.includes('invalid password'))return '密码错误';return '登录失败';}catch(e){return t||'登录失败';}});
+}
+const btn=document.getElementById('btn');
+btn.onclick=async()=>{
+  const username=document.getElementById('u').value.trim();
+  const password=document.getElementById('p').value;
+  try{
+    const r=await fetch('/api/v1/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    if(r.status===200){
+      location.href='/index.html';
+    }else{
+      document.getElementById('msg').textContent=await cnMsg(r);
+    }
+  }catch(e){
+    document.getElementById('msg').textContent='网络错误';
+  }
+};
+</script>
+</body>
+</html>

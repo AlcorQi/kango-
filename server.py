@@ -4,7 +4,8 @@ import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
-from config import WEB_DIR, ensure_dirs, read_config, write_config
+from config import WEB_DIR, ensure_dirs, read_config, write_config, USERS_FILE
+sessions = {}
 from data_store import read_summary, compute_stats, iter_anomalies, parse_iso
 from sse_manager import add_client, remove_client, heartbeat_loop, tailer_loop
 from ai_provider import ai_provider
@@ -36,9 +37,17 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._handle_list_hosts()
             elif p == '/api/v1/test-email':
                 return self._handle_test_email()
+            elif p == '/api/v1/me':
+                return self._handle_me()
             else:
                 return error_response(self, 404, 'NOT_FOUND', 'unknown path')
         
+        if p in ('/', '/index.html', '/history.html', '/settings.html'):
+            if not self._is_authenticated():
+                self.send_response(302)
+                self.send_header('Location', '/login.html')
+                self.end_headers()
+                return
         return super().do_GET()
 
     def _handle_stats(self, parsed):
@@ -353,7 +362,7 @@ class Handler(SimpleHTTPRequestHandler):
         """处理 CORS 预检请求"""
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Cache-Control')
         self.send_header('Access-Control-Max-Age', '86400')
         self.end_headers()
@@ -365,6 +374,14 @@ class Handler(SimpleHTTPRequestHandler):
             return self._handle_ingest()
         if parsed.path == '/api/v1/ai/generate':
             return self._handle_ai_generate()
+        if parsed.path == '/api/v1/register':
+            return self._handle_register()
+        if parsed.path == '/api/v1/register/verify':
+            return self._handle_register_verify()
+        if parsed.path == '/api/v1/login':
+            return self._handle_login()
+        if parsed.path == '/api/v1/logout':
+            return self._handle_logout()
         return error_response(self, 404, 'NOT_FOUND', 'unknown path')
 
     def do_PUT(self):
@@ -413,6 +430,165 @@ class Handler(SimpleHTTPRequestHandler):
         
         write_config(cfg)
         return json_response(self, cfg)
+
+    def _read_users(self):
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+
+    def _write_users(self, users):
+        try:
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(users, f)
+        except:
+            pass
+
+    def _parse_cookies(self):
+        raw = self.headers.get('Cookie') or ''
+        parts = [p.strip() for p in raw.split(';') if p.strip()]
+        m = {}
+        for p in parts:
+            if '=' in p:
+                k, v = p.split('=', 1)
+                m[k.strip()] = v.strip()
+        return m
+
+    def _is_authenticated(self):
+        c = self._parse_cookies()
+        token = c.get('session')
+        if not token:
+            return False
+        u = sessions.get(token)
+        if not u:
+            return False
+        if u.get('exp') and u['exp'] < time.time():
+            try:
+                del sessions[token]
+            except:
+                pass
+            return False
+        return True
+
+    def _handle_me(self):
+        c = self._parse_cookies()
+        token = c.get('session')
+        u = sessions.get(token)
+        if not u:
+            return json_response(self, {"authenticated": False})
+        return json_response(self, {"authenticated": True, "username": u.get('username')})
+
+    def _handle_register(self):
+        length = int(self.headers.get('Content-Length', '0'))
+        raw = self.rfile.read(length) if length > 0 else b''
+        try:
+            payload = json.loads(raw.decode('utf-8')) if raw else {}
+        except:
+            payload = {}
+        username = (payload.get('username') or '').strip()
+        password = (payload.get('password') or '')
+        email = (payload.get('email') or '').strip()
+        if not username or not password or not email:
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'missing fields')
+        import re
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'invalid email')
+        users = self._read_users()
+        if username in users and users[username].get('verified'):
+            return error_response(self, 400, 'ALREADY_EXISTS', 'user exists')
+        import os
+        import hashlib
+        import random
+        salt = os.urandom(8).hex()
+        h = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
+        code = f"{random.randint(0,999999):06d}"
+        users[username] = {
+            "email": email,
+            "salt": salt,
+            "password_hash": h,
+            "verified": False,
+            "code": code,
+            "code_exp": time.time() + 600
+        }
+        self._write_users(users)
+        from ingest_manager import _send_email
+        ok = False
+        try:
+            ok = _send_email(email, "注册验证码", f"验证码: {code}")
+        except:
+            ok = False
+        return json_response(self, {"sent": bool(ok)})
+
+    def _handle_register_verify(self):
+        length = int(self.headers.get('Content-Length', '0'))
+        raw = self.rfile.read(length) if length > 0 else b''
+        try:
+            payload = json.loads(raw.decode('utf-8')) if raw else {}
+        except:
+            payload = {}
+        username = (payload.get('username') or '').strip()
+        code = (payload.get('code') or '').strip()
+        if not username or not code:
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'missing fields')
+        users = self._read_users()
+        u = users.get(username)
+        if not u:
+            return error_response(self, 404, 'NOT_FOUND', 'user not found')
+        if u.get('verified'):
+            return json_response(self, {"verified": True})
+        if u.get('code') != code:
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'code mismatch')
+        if u.get('code_exp') and u['code_exp'] < time.time():
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'code expired')
+        u['verified'] = True
+        u['code'] = None
+        u['code_exp'] = None
+        users[username] = u
+        self._write_users(users)
+        return json_response(self, {"verified": True})
+
+    def _handle_login(self):
+        length = int(self.headers.get('Content-Length', '0'))
+        raw = self.rfile.read(length) if length > 0 else b''
+        try:
+            payload = json.loads(raw.decode('utf-8')) if raw else {}
+        except:
+            payload = {}
+        username = (payload.get('username') or '').strip()
+        password = (payload.get('password') or '')
+        users = self._read_users()
+        u = users.get(username)
+        if not u or not u.get('verified'):
+            return error_response(self, 401, 'UNAUTHORIZED', 'invalid user')
+        import hashlib
+        h = hashlib.sha256((u.get('salt','') + password).encode('utf-8')).hexdigest()
+        if h != u.get('password_hash'):
+            return error_response(self, 401, 'UNAUTHORIZED', 'invalid password')
+        import os
+        token = os.urandom(16).hex()
+        sessions[token] = {"username": username, "exp": time.time() + 604800}
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Set-Cookie', f'session={token}; Path=/; HttpOnly; Max-Age=604800')
+        self.end_headers()
+        self.wfile.write(json.dumps({"logged_in": True}).encode('utf-8'))
+
+    def _handle_logout(self):
+        c = self._parse_cookies()
+        token = c.get('session')
+        if token and token in sessions:
+            try:
+                del sessions[token]
+            except:
+                pass
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Set-Cookie', 'session=; Path=/; HttpOnly; Max-Age=0')
+        self.end_headers()
+        self.wfile.write(json.dumps({"logged_out": True}).encode('utf-8'))
 
 def run(host='0.0.0.0', port=8000):
     """启动服务器"""
