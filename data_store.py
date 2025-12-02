@@ -39,11 +39,16 @@ def parse_iso(s):
     except:
         return None
 
-def compute_stats(window=None):
-    """计算统计信息"""
+def compute_stats(window=None, host_id=None):
+    """计算统计信息
+    
+    :param window: 时间窗口，如 'PT24H' 或 '24h'
+    :param host_id: 可选，按主机ID筛选
+    """
     total = 0
     by_severity = {"critical": 0, "major": 0, "minor": 0}
     by_type = {}
+    by_host = {}
     last_detection = None
     now = time.time()
     window_sec = None
@@ -58,6 +63,10 @@ def compute_stats(window=None):
             window_sec = None
     
     for ev in iter_anomalies():
+        # 按 host_id 筛选
+        if host_id and ev.get('host_id') != host_id:
+            continue
+        
         try:
             ts = time.strptime(ev.get('detected_at'), '%Y-%m-%dT%H:%M:%SZ')
             ts_epoch = time.mktime(ts)
@@ -77,6 +86,10 @@ def compute_stats(window=None):
         if t:
             by_type[t] = by_type.get(t, 0) + 1
         
+        h = ev.get('host_id')
+        if h:
+            by_host[h] = by_host.get(h, 0) + 1
+        
         if ev.get('detected_at'):
             if not last_detection or ev['detected_at'] > last_detection:
                 last_detection = ev['detected_at']
@@ -87,6 +100,7 @@ def compute_stats(window=None):
         "total_anomalies": total,
         "by_severity": by_severity,
         "by_type": by_type,
+        "by_host": by_host,
         "trend": [],
         "last_detection": last_detection,
         "last_scan": ls

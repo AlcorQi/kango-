@@ -1,0 +1,11 @@
+# 中心服务器依赖（server.py）
+# Python 标准库已包含所需模块，无需额外依赖
+
+# Agent 依赖（agent.py）
+requests>=2.25.0
+
+# 后端离线检测工具依赖（backend/main.py）
+# 如果使用 backend/main.py，需要：
+# PyYAML>=5.4.0  # 用于读取 YAML 配置文件
+
+

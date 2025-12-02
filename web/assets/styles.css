@@ -51,3 +51,14 @@ header .actions{display:flex;gap:8px}
 .ai-item .ai-title{color:var(--text);font-weight:600}
 .ai-item .ai-reason{color:var(--text)}
 .ai-item .ai-related{color:var(--text)}
+.markdown-body{color:var(--text)}
+.markdown-body *{color:var(--text)}
+.markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{color:var(--text)}
+.markdown-body p,.markdown-body li,.markdown-body td,.markdown-body th{color:var(--text)}
+.markdown-body a{color:#a7c5ff}
+.markdown-body code,.markdown-body pre{color:var(--text);background:#0f1a37;border:1px solid #2a355e;border-radius:6px}
+.markdown-body pre{padding:10px}
+.markdown-body blockquote{color:var(--text);border-left:3px solid var(--accent);padding-left:10px}
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);padding:8px 0}
+.spinner{width:16px;height:16px;border:2px solid #2a355e;border-top-color:var(--text);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}

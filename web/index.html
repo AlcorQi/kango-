@@ -6,6 +6,8 @@
 <title>Linux系统异常监控</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 <link href="./assets/styles.css" rel="stylesheet"/>
+<!-- 轻量级 Markdown 渲染，用于展示 LLM 分析报告 -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 <header>
@@ -33,6 +35,13 @@
           <div style="margin-top:8px;color:#a7b1c9">最后检测到新异常时间：<span id="metric-last">-</span></div>
           <div style="margin-top:4px;color:#a7b1c9">最后扫描时间：<span id="metric-last-scan">-</span></div>
         </div>
+        <div class="card">
+          <h3>机器筛选</h3>
+          <select id="host-filter" class="input" style="width:100%">
+            <option value="">全部机器</option>
+          </select>
+          <div class="hint" style="margin-top:4px;font-size:12px">选择特定机器查看其异常统计</div>
+        </div>
       </div>
 
   <div class="row" style="margin-top:16px">
@@ -45,6 +54,7 @@
             <th>级别</th>
             <th>类型</th>
             <th>信息</th>
+            <th>主机</th>
             <th>来源</th>
           </tr>
         </thead>
@@ -61,9 +71,15 @@
   </div>
 
   <div class="row" style="margin-top:16px">
-    <div class="card" style="flex:1">
-      <div class="toolbar"><div style="font-weight:600;color:#a7b1c9">AI 建议</div></div>
-      <div id="ai-list"></div>
+    <div class="card" style="flex:1; max-height:600px; overflow:auto">
+      <div class="toolbar">
+        <div style="font-weight:600;color:#a7b1c9">AI 建议（LLM 分析报告）</div>
+        <div style="display:flex;gap:8px">
+          <button id="btn-ai-refresh" class="btn ghost" disabled>刷新分析</button>
+          <button id="btn-ai-generate" class="btn primary">生成AI建议</button>
+        </div>
+      </div>
+      <div id="ai-list" class="markdown-body"></div>
     </div>
   </div>
 

@@ -30,6 +30,20 @@
       <div class="hint">历史数据保留天数，范围 1–365 天，默认 30 天；超过自动清理归档</div>
       <div class="toolbar"><label>数据保留上限(条)</label><input id="retention-max" class="input" type="number" min="1" max="1000000"/></div>
       <div class="hint">历史记录总条数上限，超过自动删除最早数据，默认 50000 条</div>
+      <hr/>
+      <h4 style="margin-top:4px">搜索 / 检测模式</h4>
+      <div class="toolbar" id="detect-modes">
+        <label style="margin-right:8px">选择模式</label>
+        <button class="btn" data-mode="keyword">纯关键字</button>
+        <button class="btn" data-mode="regex">纯正则</button>
+        <button class="btn primary" data-mode="mixed">混合模式(推荐)</button>
+      </div>
+      <div class="hint">
+        对应 <code>backend/调试命令格式（模式选择）.md</code> 中的三种模式。
+        当你点击按钮并保存配置时，会把当前选择写入 <code>config/config.json</code>，
+        用于后端调整搜索 / 检测策略（如关键字 / 正则 / 混合）。
+      </div>
+      <pre id="detect-mode-command" class="hint" style="white-space:pre-wrap;margin-top:4px"></pre>
       </div>
     <div class="card" style="flex:1">
       <h3>告警配置</h3>

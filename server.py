@@ -32,6 +32,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._handle_sse_stream()
             elif p == '/api/v1/ai/suggestions':
                 return self._handle_ai_suggestions(parsed)
+            elif p == '/api/v1/hosts':
+                return self._handle_list_hosts()
             else:
                 return error_response(self, 404, 'NOT_FOUND', 'unknown path')
         
@@ -41,7 +43,8 @@ class Handler(SimpleHTTPRequestHandler):
         """处理统计信息请求"""
         qs = parse_qs(parsed.query)
         window = qs.get('window', [None])[0]
-        res = compute_stats(window)
+        host_id = qs.get('host_id', [None])[0]
+        res = compute_stats(window, host_id)
         return json_response(self, res)
 
     def _handle_get_event(self, path):
@@ -176,6 +179,141 @@ class Handler(SimpleHTTPRequestHandler):
         
         res = ai_provider.suggestions(window, types, host_id, limit)
         return json_response(self, res)
+    def _handle_ai_generate(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            raw = self.rfile.read(length) if length > 0 else b''
+            payload = {}
+            if raw:
+                try:
+                    payload = json.loads(raw.decode('utf-8'))
+                except:
+                    payload = {}
+            window = payload.get('window')
+            types = payload.get('types')
+            host_id = payload.get('host_id')
+            res = ai_provider.generate(window, types, host_id)
+            status = {
+                "status": "success" if res.get('generated') else "error",
+                "generated": res.get('generated'),
+                "returncode": res.get('returncode'),
+                "updated_at": res.get('updated_at'),
+                "report_path": res.get('report_path')
+            }
+            return json_response(self, status)
+        except Exception as e:
+            return error_response(self, 500, 'INTERNAL_ERROR', str(e))
+
+    def _handle_ingest(self):
+        """处理 Agent 上报的异常数据"""
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if length == 0:
+                return error_response(self, 400, 'INVALID_ARGUMENT', 'empty body')
+            
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode('utf-8'))
+            
+            # 验证数据结构
+            if not isinstance(data, dict):
+                return error_response(self, 400, 'INVALID_ARGUMENT', 'body must be a JSON object')
+            
+            # 支持单个事件或事件数组
+            events = data.get('events', [data]) if 'events' not in data else data['events']
+            
+            if not isinstance(events, list):
+                return error_response(self, 400, 'INVALID_ARGUMENT', 'events must be an array')
+            
+            # 验证 token（可选）
+            token = self.headers.get('X-Ingest-Token') or data.get('token')
+            cfg = read_config()
+            expected_token = cfg.get('security', {}).get('ingest_token', '<redacted>')
+            if expected_token != '<redacted>' and token != expected_token:
+                return error_response(self, 401, 'UNAUTHORIZED', 'invalid ingest token')
+            
+            # 写入事件
+            from ingest_manager import _write_event
+            from ingest_manager import _handle_alert
+            from ingest_manager import _severity_for
+            from config import SCHEMA_VERSION
+            import socket
+            import hashlib
+            
+            count = 0
+            for ev in events:
+                # 验证必要字段
+                if not isinstance(ev, dict):
+                    continue
+                
+                # 确保有必要的字段
+                if 'type' not in ev or 'message' not in ev:
+                    continue
+                
+                # 生成或使用提供的 ID
+                if 'id' not in ev:
+                    raw_id = (ev.get('host_id', socket.gethostname()) + 
+                             ev.get('source_file', '') + 
+                             str(ev.get('line_number', 0)) + 
+                             ev.get('detected_at', time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())) + 
+                             ev['message']).encode('utf-8', 'ignore')
+                    ev['id'] = hashlib.sha256(raw_id).hexdigest()[:16]
+                
+                # 确保有 schema_version
+                ev['schema_version'] = ev.get('schema_version', SCHEMA_VERSION)
+                
+                # 确保有 severity
+                if 'severity' not in ev:
+                    ev['severity'] = _severity_for(ev['type'])
+                
+                # 确保有 detected_at
+                if 'detected_at' not in ev:
+                    ev['detected_at'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                
+                # 确保有 host_id
+                if 'host_id' not in ev:
+                    ev['host_id'] = socket.gethostname()
+                
+                # 写入事件
+                _write_event(ev)
+                
+                # 处理告警
+                try:
+                    _handle_alert(ev, cfg)
+                except:
+                    pass
+                
+                # 通过 SSE 推送
+                from sse_manager import publish_event
+                try:
+                    publish_event(ev)
+                except:
+                    pass
+                
+                count += 1
+            
+            return json_response(self, {
+                "status": "success",
+                "received": len(events),
+                "processed": count
+            })
+            
+        except json.JSONDecodeError:
+            return error_response(self, 400, 'INVALID_ARGUMENT', 'invalid json')
+        except Exception as e:
+            return error_response(self, 500, 'INTERNAL_ERROR', str(e))
+
+    def _handle_list_hosts(self):
+        """返回所有已注册的机器列表"""
+        hosts = set()
+        for ev in iter_anomalies():
+            host_id = ev.get('host_id')
+            if host_id:
+                hosts.add(host_id)
+        
+        return json_response(self, {
+            "hosts": sorted(list(hosts)),
+            "total": len(hosts)
+        })
 
     def do_OPTIONS(self):
         """处理 CORS 预检请求"""
@@ -185,6 +323,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Cache-Control')
         self.send_header('Access-Control-Max-Age', '86400')
         self.end_headers()
+
+    def do_POST(self):
+        """处理 POST 请求"""
+        parsed = urlparse(self.path)
+        if parsed.path == '/api/v1/ingest':
+            return self._handle_ingest()
+        if parsed.path == '/api/v1/ai/generate':
+            return self._handle_ai_generate()
+        return error_response(self, 404, 'NOT_FOUND', 'unknown path')
 
     def do_PUT(self):
         """处理 PUT 请求"""
@@ -205,6 +352,9 @@ class Handler(SimpleHTTPRequestHandler):
         allowed = {"schema_version", "detection", "alerts", "ui", "security"}
         if set(cfg.keys()) - allowed:
             return error_response(self, 400, 'INVALID_ARGUMENT', 'unknown fields')
+        
+        # 更新本地检测启用状态
+        local_detection_enabled = cfg.get('detection', {}).get('local_detection_enabled', True)
         
         try:
             si = cfg['detection']['scan_interval_sec']
@@ -235,9 +385,19 @@ def run(host='0.0.0.0', port=8000):
     ensure_dirs()
     init_alert_state()
     threading.Thread(target=cleanup_loop, daemon=True).start()
-    threading.Thread(target=ingest_loop, daemon=True).start()
+    
+    # 根据配置决定是否启动本地检测循环
+    cfg = read_config()
+    local_detection_enabled = cfg.get('detection', {}).get('local_detection_enabled', True)
+    if local_detection_enabled:
+        threading.Thread(target=ingest_loop, daemon=True).start()
+        print("✅ 本地检测循环已启用")
+    else:
+        print("ℹ️  本地检测循环已禁用（仅接收 Agent 上报）")
+    
     httpd = ThreadingHTTPServer((host, port), Handler)
     print(f"服务器启动在 {host}:{port}")
+    print(f"📡 Agent 上报接口: POST http://{host}:{port}/api/v1/ingest")
     httpd.serve_forever()
 
 if __name__ == '__main__':

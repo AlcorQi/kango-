@@ -45,6 +45,7 @@ def ensure_dirs():
                     "scan_interval_sec": 60,
                     "retention_days": 30,
                     "retention_max_events": 50000,
+                    "local_detection_enabled": True,
                     "enabled_detectors": ["oom","kernel_panic","unexpected_reboot","fs_error","oops","deadlock"]
                 },
                 "alerts": {
