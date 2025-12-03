@@ -43,7 +43,7 @@ header .actions{display:flex;gap:8px}
 .btn.ghost{background:transparent;border-color:#2a355e}
 .error{background:#2a1b1c;color:#ffb3b6;border:1px solid #632e32;border-radius:8px;padding:10px;margin:12px 0}
 .success{background:#1f2b24;color:#b9f6d0;border:1px solid #2b5b43;border-radius:8px;padding:10px;margin:12px 0}
-.chart-wrap{height:240px}
+.chart-wrap{height:240px;position:relative;display:flex;justify-content:center;align-items:center}
 .footer{padding:16px;color:var(--muted);text-align:center}
 .hint{font-size:12px;color:var(--muted);margin-top:4px}
 #metric-total,#metric-critical,#metric-status{color:var(--muted)}
@@ -62,3 +62,55 @@ header .actions{display:flex;gap:8px}
 .loading{display:flex;align-items:center;gap:8px;color:var(--muted);padding:8px 0}
 .spinner{width:16px;height:16px;border:2px solid #2a355e;border-top-color:var(--text);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* Drawer Styles */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.drawer-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid #2a355e;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 24px;
+  overflow-y: auto;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+}
+.drawer.show {
+  transform: translateX(0);
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.drawer-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+.drawer h4 {
+  color: var(--muted);
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-weight: 600;
+}

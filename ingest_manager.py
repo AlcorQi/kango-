@@ -379,11 +379,17 @@ def ingest_loop():
                 cfg2 = {}
             det2 = cfg2.get('detection', {})
             try:
-                cur = int(det2.get('scan_interval_sec', start))
+                cur_interval = int(det2.get('scan_interval_sec', start))
             except:
-                cur = start
-            if cur != start:
+                cur_interval = start
+            
+            cur_paths = det2.get('log_paths', [])
+            cur_enabled = det2.get('enabled_detectors', [])
+
+            # 如果间隔、路径或启用的检测器发生变化，立即中断等待
+            if cur_interval != start or cur_paths != paths or cur_enabled != enabled:
                 break
+            
             time.sleep(1)
             waited += 1
 

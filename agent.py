@@ -81,6 +81,16 @@ class Agent:
         cfg = self.load_config()
         return int(cfg.get('detection', {}).get('scan_interval_sec', 60))
     
+    def get_config_snapshot(self):
+        """获取配置快照，用于比较配置是否变更"""
+        cfg = self.load_config()
+        det = cfg.get('detection', {})
+        return {
+            'interval': int(det.get('scan_interval_sec', 60)),
+            'paths': det.get('log_paths', []),
+            'enabled': det.get('enabled_detectors', [])
+        }
+    
     def get_search_mode(self):
         """获取检测模式（keyword/regex/mixed），优先读取配置文件"""
         cfg = self.load_config()
@@ -198,15 +208,20 @@ class Agent:
                     start = max(5, min(3600, int(interval)))
                 except:
                     start = 60
+                
+                # 获取当前配置快照
+                current_snap = self.get_config_snapshot()
+                
                 waited = 0
                 while waited < start:
-                    new_interval = self.get_scan_interval()
-                    try:
-                        new_interval = int(new_interval)
-                    except:
-                        new_interval = start
-                    if new_interval != start:
+                    new_snap = self.get_config_snapshot()
+                    
+                    # 如果配置发生变化（间隔、路径或检测器），立即中断等待
+                    if (new_snap['interval'] != current_snap['interval'] or 
+                        new_snap['paths'] != current_snap['paths'] or 
+                        new_snap['enabled'] != current_snap['enabled']):
                         break
+                        
                     time.sleep(1)
                     waited += 1
                 

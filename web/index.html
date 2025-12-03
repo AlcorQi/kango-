@@ -86,6 +86,30 @@
   <div class="footer">© 系统异常检测</div>
 </div>
 
+<div id="drawer-overlay" class="drawer-overlay"></div>
+<div id="type-drawer" class="drawer">
+  <div class="drawer-header">
+    <h3 id="drawer-title">类型详情</h3>
+    <button id="drawer-close" class="btn ghost" style="border:none;font-size:24px;padding:0 8px">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="card" style="background:#0f1a37; border:1px solid #2a355e">
+      <h4>24小时趋势</h4>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="drawerChart"></canvas>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px; background:#0f1a37; border:1px solid #2a355e">
+      <h4>最新事件</h4>
+      <div style="overflow-x:auto">
+        <table class="table" style="font-size:12px">
+          <tbody id="drawer-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module" src="./assets/dashboard.js?v=2"></script>
 </body>
