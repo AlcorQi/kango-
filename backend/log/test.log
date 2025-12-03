@@ -157,3 +157,22 @@ Memory cgroup out of memory
 [20000.123467]  schedule+0x43/0xb0
 [20000.123468]  mutex_lock+0x6a/0x70
 [20000.123469]  thread2_func+0x85/0xa0 [real_deadlock]
+2025-12-03T21:00:00.000000+08:00 hostname kernel: Kernel panic - not syncing: Fatal exception in interrupt
+2025-12-03T21:00:10.000000+08:00 hostname kernel: kernel panic: Attempted to kill init!
+2025-12-03T21:00:20.000000+08:00 hostname kernel: Kernel panic - not syncing: VFS: Unable to mount root fs
+
+2025-12-03T21:00:00.000000+08:00 hostname kernel: Kernel panic - not syncing: Fatal exception in interrupt
+2025-12-03T21:00:10.000000+08:00 hostname kernel: kernel panic: Attempted to kill init!
+2025-12-03T21:00:20.000000+08:00 hostname kernel: Kernel panic - not syncing: VFS: Unable to mount root fs
+
+2025-12-03T21:00:00.000000+08:00 hostname kernel: Kernel panic - not syncing: Fatal exception in interrupt
+2025-12-03T21:00:10.000000+08:00 hostname kernel: kernel panic: Attempted to kill init!
+2025-12-03T21:00:20.000000+08:00 hostname kernel: Kernel panic - not syncing: VFS: Unable to mount root fs
+
+2025-12-03T21:00:00.000000+08:00 hostname kernel: Kernel panic - not syncing: Fatal exception in interrupt
+2025-12-03T21:00:10.000000+08:00 hostname kernel: kernel panic: Attempted to kill init!
+2025-12-03T21:00:20.000000+08:00 hostname kernel: Kernel panic - not syncing: VFS: Unable to mount root fs
+
+2025-12-03T21:00:00.000000+08:00 hostname kernel: Kernel panic - not syncing: Fatal exception in interrupt
+2025-12-03T21:00:10.000000+08:00 hostname kernel: kernel panic: Attempted to kill init!
+2025-12-03T21:00:20.000000+08:00 hostname kernel: Kernel panic - not syncing: VFS: Unable to mount root fs
